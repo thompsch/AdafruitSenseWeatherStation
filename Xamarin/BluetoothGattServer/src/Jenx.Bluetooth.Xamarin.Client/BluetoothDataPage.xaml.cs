@@ -85,16 +85,16 @@ namespace Jenx.Bluetooth.Xamarin.Client
                             case 66: //Battery
                                 {
                                     var batteryAsString = args.Characteristic.StringValue.Substring(1);
-                                    var batt = float.Parse(batteryAsString);
+                                    var battVolts = float.Parse(batteryAsString);
 
-                                    if (batt <= 5) lblBatt.TextColor = Color.Red;
-                                    else if (batt <= 10) lblBatt.TextColor = Color.Orange;
-                                    else if (batt <= 25) lblBatt.TextColor = Color.Yellow;
-                                    else lblBatt.TextColor = Color.Black;
+                                    if (battVolts <= 3.0) lblBatt.TextColor = Color.Red;
+                                    else if (battVolts <= 3.2) lblBatt.TextColor = Color.Orange;
+                                    else if (battVolts <= 3.5) lblBatt.TextColor = Color.Yellow;
+                                    else lblBatt.TextColor = Color.Green;
 
                                     Device.BeginInvokeOnMainThread(() =>
                                     {
-                                        lblHumidity.Text = $"{batteryAsString}%";
+                                        lblBatt.Text = $"{battVolts:0.0}V";
                                     });
                                     break;
                                 }
@@ -137,10 +137,12 @@ namespace Jenx.Bluetooth.Xamarin.Client
                     await charSend.WriteAsync(senddata);
                     senddata = Encoding.UTF8.GetBytes("h");
                     await charSend.WriteAsync(senddata);
+                    senddata = Encoding.UTF8.GetBytes("b");
+                    await charSend.WriteAsync(senddata);
                 }
                 catch (Exception ex)
                 {
-                    await DisplayAlert("Error", ex.ToString(), "ew");
+                    await DisplayAlert("Error", ex.ToString(), "Wuh? That's a pisser.");
                 }
             }
             else
