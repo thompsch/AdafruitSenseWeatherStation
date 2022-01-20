@@ -1,0 +1,182 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:gauge="clr-namespace:Syncfusion.SfGauge.XForms;assembly=Syncfusion.SfGauge.XForms"
+             xmlns:graph="clr-namespace:Syncfusion.SfChart.XForms;assembly=Syncfusion.SfChart.XForms"
+             mc:Ignorable="d"
+             Title="Woodsong Weather"
+             Visual="Material"
+             x:Class="SenseWeather.MainPage">
+    <ContentPage.Content>
+
+        <Grid BackgroundColor="#d3dece">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="8*" />
+                <RowDefinition Height="4*" />
+                <RowDefinition Height="4*" />
+                <RowDefinition Height="2*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <!--TEMP-->
+            <gauge:SfCircularGauge Margin="0,40,0,0" Grid.Row="0" Grid.ColumnSpan="4">
+                <gauge:SfCircularGauge.Scales>
+                    <gauge:Scale x:Name="tempScale" StartValue="-20" EndValue="120"
+                                 UseRangeColorForLabels="True" LabelFontSize="18"
+                                 RimColor="#939492" FontAttributes="Bold"
+                                >
+                        <gauge:Scale.Ranges>
+                            <gauge:Range StartValue="-20" EndValue="0" Color="#94b6d4"/>
+                            <gauge:Range StartValue="0" EndValue="32" Color="SteelBlue"/>
+                            <gauge:Range StartValue="32" EndValue="80" Color="#90cc72"/>
+                            <gauge:Range StartValue="80" EndValue="100" Color="Orange"/>
+                            <gauge:Range StartValue="100" EndValue="120" Color="Red"/>
+                        </gauge:Scale.Ranges>
+                        <gauge:Scale.Pointers>
+                            <gauge:NeedlePointer TailColor="Black" x:Name="tempNeedle"/>
+                        </gauge:Scale.Pointers>
+                    </gauge:Scale>
+
+                </gauge:SfCircularGauge.Scales>
+                <gauge:SfCircularGauge.Headers>
+                    <gauge:Header x:Name="tempHeader" TextSize="28" ForegroundColor="Black"
+                                  FontAttributes="Bold" VerticalHeaderPosition="Start"/>
+                    <gauge:Header x:Name="tempHeader2" TextSize="18" ForegroundColor="Black"
+                                  VerticalHeaderPosition="End"/>
+                </gauge:SfCircularGauge.Headers>
+                <gauge:SfCircularGauge.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="Temperature_Tapped"/>
+                </gauge:SfCircularGauge.GestureRecognizers>
+            </gauge:SfCircularGauge>
+            <!-- Humidity -->
+            <gauge:SfCircularGauge Margin="10" Grid.Row="1"
+                                   Grid.Column="0" Grid.ColumnSpan="2">
+                <gauge:SfCircularGauge.Scales>
+                    <gauge:Scale StartValue="0" EndValue="100"
+                                 UseRangeColorForLabels="False" LabelFontSize="12"
+                                 RimColor="#9ab59e" FontAttributes="Bold">
+                        <gauge:Scale.Ranges>
+
+                            <gauge:Range  StartValue="0" EndValue="100" Color="Green"/>
+                        </gauge:Scale.Ranges>
+                        <gauge:Scale.Pointers>
+                            <gauge:NeedlePointer TailColor="Black" x:Name="humidityNeedle"  />
+                        </gauge:Scale.Pointers>
+                    </gauge:Scale>
+                </gauge:SfCircularGauge.Scales>
+                <gauge:SfCircularGauge.Headers>
+                    <gauge:Header x:Name="humidityHeader" TextSize="18" ForegroundColor="Black" FontAttributes="Bold"
+                                  VerticalHeaderPosition="Start"/>
+                </gauge:SfCircularGauge.Headers>
+            </gauge:SfCircularGauge>
+
+            <!-- Pressure -->
+            <gauge:SfCircularGauge Margin="10" Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2">
+                <gauge:SfCircularGauge.Scales>
+                    <gauge:Scale StartValue="650" EndValue="813"
+                                 UseRangeColorForLabels="False" LabelFontSize="8"
+                                 RimColor="LightSteelBlue" FontAttributes="Bold">
+                        <gauge:Scale.Ranges>
+                            <gauge:Range x:Name="pressureRange" StartValue="650" EndValue="820" Color="SteelBlue"/>
+                        </gauge:Scale.Ranges>
+                        <gauge:Scale.Pointers>
+                            <gauge:NeedlePointer x:Name="pressureNeedle" TailColor="Black"  />
+                        </gauge:Scale.Pointers>
+                    </gauge:Scale>
+
+                </gauge:SfCircularGauge.Scales>
+                <gauge:SfCircularGauge.Headers>
+                    <gauge:Header x:Name="pressureHeader" TextSize="18" ForegroundColor="Black" FontAttributes="Bold"
+                                  VerticalHeaderPosition="Start"/>
+                    <gauge:Header x:Name="pressureHeader2" TextSize="10" ForegroundColor="Black" 
+                                  VerticalHeaderPosition="End"/>
+                </gauge:SfCircularGauge.Headers>
+                <gauge:SfCircularGauge.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="Pressure_Tapped"/>
+                </gauge:SfCircularGauge.GestureRecognizers>
+            </gauge:SfCircularGauge>
+            <Button x:Name="btnRefresh" Text="Refresh" Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                   Clicked="RefreshButton_Clicked" />
+            <!-- battery-->
+            <Frame Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="2"
+                   Padding="0,0,10,0" BackgroundColor="Transparent">
+                <gauge:SfLinearGauge HeightRequest="20">
+                    <gauge:SfLinearGauge.Scales>
+                        <gauge:LinearScale
+                            Offset="-10"
+                            LabelColor="Black"
+                            LabelOffset="-8"
+                                    ShowTicks="True"
+                                    ShowLabels="True"
+                                    MinimumValue="0" 
+                                    MaximumValue="100" 
+                                    ScaleBarColor="LightGray" 
+                                    ScaleOffset="0" 
+                                    ScaleBarSize="20">
+                            <gauge:LinearScale.Pointers>
+                                <gauge:BarPointer x:Name="battery"
+                                     Thickness="18"/>
+                            </gauge:LinearScale.Pointers>
+                            <gauge:LinearScale.MajorTickSettings>
+                                <gauge:LinearTickSettings Thickness="1" Color ="Black" Length="18" Offset ="-18" />
+                            </gauge:LinearScale.MajorTickSettings>
+                            <gauge:LinearScale.MinorTickSettings>
+                                <gauge:LinearTickSettings Thickness="0" Length ="0"/>
+                            </gauge:LinearScale.MinorTickSettings>
+                        </gauge:LinearScale>
+                    </gauge:SfLinearGauge.Scales>
+                    <gauge:SfLinearGauge.Header>
+                        <gauge:LinearHeader />
+                    </gauge:SfLinearGauge.Header>
+                </gauge:SfLinearGauge>
+
+            </Frame>
+            <!-- lux -->
+            <Frame Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" BackgroundColor="Transparent"
+                   Margin="0,0,0,0" HorizontalOptions="Center">
+                <gauge:SfLinearGauge WidthRequest="40" Orientation="OrientationVertical">
+                    <gauge:SfLinearGauge.Scales>
+                        <gauge:LinearScale
+                                    ShowTicks="False"
+                                    ShowLabels="False"
+                                    MinimumValue="0" 
+                                    MaximumValue="100" 
+                                    ScaleBarColor = "WhiteSmoke"
+                                    ScaleOffset="0" 
+                                    ScaleBarSize="20">
+                            <gauge:LinearScale.Pointers>
+                                <gauge:BarPointer x:Name="lux"
+                                     Thickness="18" />
+                            </gauge:LinearScale.Pointers>
+
+                        </gauge:LinearScale>
+                    </gauge:SfLinearGauge.Scales>
+                    <gauge:SfLinearGauge.Header>
+                        <gauge:LinearHeader />
+                    </gauge:SfLinearGauge.Header>
+                </gauge:SfLinearGauge>
+            </Frame>
+            <Frame Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4"
+                   IsVisible="True">
+                <graph:SfChart>
+
+                    <graph:SfChart.PrimaryAxis>
+                        <graph:DateTimeAxis />
+                    </graph:SfChart.PrimaryAxis>
+
+                    <graph:SfChart.SecondaryAxis>
+                        <graph:NumericalAxis  />
+                    </graph:SfChart.SecondaryAxis>
+                </graph:SfChart>
+
+            </Frame>
+        </Grid>
+    </ContentPage.Content>
+</ContentPage>
