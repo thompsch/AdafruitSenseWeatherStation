@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Plugin.BLE;
 using Plugin.BLE.Abstractions.Contracts;
+using Plugin.BLE.Abstractions;
 
 namespace SenseWeather
 {
@@ -10,11 +11,17 @@ namespace SenseWeather
     {
         private static IAdapter _bluetoothAdapter;
         public static IDevice WeatherStationDevice;
-
+        private static Guid weatherStationGuid = Guid.Parse("00000000-0000-0000-0000-de02576ef3b7");
 
         static BleDevice()
         {
+            //_bluetoothAdapter.DeviceConnectionLost += _bluetoothAdapter_DeviceConnectionLost;
+        }
 
+        private static void _bluetoothAdapter_DeviceConnectionLost(object sender, Plugin.BLE.Abstractions.EventArgs.DeviceErrorEventArgs e)
+        {
+            //TODO: reconnect
+            throw new NotImplementedException();
         }
 
         public static bool IsBluetoothConnected()
@@ -30,7 +37,7 @@ namespace SenseWeather
             }
         }
 
-        public static async Task<IDevice> GetWeatherStationDevice()
+        public static async Task<string> GetWeatherStationDevice()
         {
             if (!IsBluetoothConnected())
             {
@@ -41,40 +48,41 @@ namespace SenseWeather
                 _bluetoothAdapter = CrossBluetoothLE.Current.Adapter;
             }
 
-            if (WeatherStationDevice != null)
+            if (_bluetoothAdapter != null && WeatherStationDevice != null)
             {
-                return WeatherStationDevice;
+                return "We already have a weatherstation.";
             }
             /*if (!await CheckPermissions())
             {
                 return null;
             }*/
-            var device = await _bluetoothAdapter.ConnectToKnownDeviceAsync(Guid.Parse("00000000-0000-0000-0000-de02576ef3b7"));
-            if (device.State == Plugin.BLE.Abstractions.DeviceState.Connected)
+
+            var device = await _bluetoothAdapter.ConnectToKnownDeviceAsync(weatherStationGuid);
+            if (device != null && device.State == DeviceState.Connected)
             {
                 WeatherStationDevice = device;
-                return WeatherStationDevice;
+                return "success";
             }
             else
             {
                 try
                 {
-                    await _bluetoothAdapter.ConnectToDeviceAsync(device);
-                    if (device.State != Plugin.BLE.Abstractions.DeviceState.Connected)
+                    await _bluetoothAdapter.ConnectToKnownDeviceAsync(weatherStationGuid);
+                    if (device.State != DeviceState.Connected)
                     {
                         //TODO error!!
-                        return null;
+                        return "ERROR: Device is no longer connected!";
                     }
                     else
                     {
                         WeatherStationDevice = device;
-                        return WeatherStationDevice;
+                        return "reconnect worked!";
                     }
                 }
                 catch
                 {
                     WeatherStationDevice = null;
-                    return WeatherStationDevice;
+                    return "ERROR: ConnectToKnownDevice has failed.";
                 }
             }
         }

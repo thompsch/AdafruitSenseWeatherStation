@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using Plugin.BLE.Abstractions.Contracts;
@@ -21,9 +22,17 @@ namespace SenseWeather
 
         protected override async void OnAppearing()
         {
-            await GetStarted();
-            base.OnAppearing();
+            try
+            {
+                await GetStarted();
+                base.OnAppearing();
+            }
+            catch (Exception e)
+            {
+                DisplayAlert("ERROR", e.ToString(), "ugh");
+            }
         }
+
 
         private async Task GetStarted()
         {
@@ -33,10 +42,20 @@ namespace SenseWeather
                 return;
             }
 
-            _device = await BleDevice.GetWeatherStationDevice();
+            var result = (await BleDevice.GetWeatherStationDevice());
+            if (result.StartsWith("ERROR"))
+            {
+                await DisplayAlert("ERROR", "Problem connecting to the device.", result);
+            }
+            else
+            {
+                Debug.WriteLine(result);
+            }
+            _device = BleDevice.WeatherStationDevice;
+
             if (_device == null)
             {
-                await DisplayAlert("No Device", "Weather device found.", "Drat");
+                await DisplayAlert("No Device", "Weather device not found.", "Drat");
                 return;
             }
 
@@ -58,17 +77,25 @@ namespace SenseWeather
         {
             try
             {
-                if (weatherService == null) weatherService = await BleDevice.WeatherStationDevice.GetServiceAsync(GattConstants.UartServiceId);
+                if (weatherService == null) weatherService =
+                        await BleDevice.WeatherStationDevice.GetServiceAsync(GattConstants.UartServiceId);
                 if (weatherService != null)
                 {
                     charReceive = await weatherService.GetCharacteristicAsync(GattConstants.UartTxCharacteristic);
-                    charReceive.ValueUpdated += (o, args) =>
+
+                    charReceive.ValueUpdated += async (o, args) =>
                     {
+                        if (charReceive.StringValue.StartsWith("X"))
+                        {
+                            var borp = charReceive.StringValue;
+                            var burp = await charReceive.ReadAsync();
+                        }
+                        var boo = charReceive.StringValue;
                         switch (args.Characteristic.Value[0])
                         {
                             case 84: //temp F
                                 {
-                                    HandleTemperature(args.Characteristic.StringValue.Substring(1));
+                                    HandleTemperature(args.Characteristic.StringValue.Substring(1), false);
                                     break;
                                 }
                             case 80: //Pressure (mmHg)
@@ -82,7 +109,7 @@ namespace SenseWeather
                                     var humidity = float.Parse(humidityAsString);
                                     Device.BeginInvokeOnMainThread(() =>
                                     {
-                                        humidityHeader.Text = $"{humidityAsString:0.0}%";
+                                        humidityHeader.Text = $"{humidity:0.0}%";
                                         humidityNeedle.Value = humidity;
                                     });
                                     break;
@@ -91,44 +118,55 @@ namespace SenseWeather
                                 {
                                     var batteryAsString = args.Characteristic.StringValue.Substring(1);
                                     var battVolts = float.Parse(batteryAsString);
-                                    var voltsAsPercent = (battVolts / 4.4) * 100;
+                                    var batteryMax = 4.2;
+                                    var batteryMin = 3.3;
+
+                                    var voltsAsPercent = (1 - (batteryMax - battVolts)) * 100;
+
+
+                                    // (battVolts - 3.6) / 4.14 * 100;
                                     Device.BeginInvokeOnMainThread(() =>
                                     {
+                                        lblBatteryPercent.Text = $"{battVolts}v ({voltsAsPercent:0}%)";
                                         battery.Value = voltsAsPercent;// $"{battVolts:0.0} volts";
-                                        if (voltsAsPercent <= 10) battery.Color = Color.Red;
-                                        else if (voltsAsPercent <= 20) battery.Color = Color.Orange;
-                                        else if (voltsAsPercent <= 30) battery.Color = Color.Yellow;
-                                        else battery.Color = Color.Green;
+                                        if (voltsAsPercent <= 10) battery.Color = Color.FromHex("#ff0000");
+                                        else if (voltsAsPercent <= 20) battery.Color = Color.FromHex("#ffa500");
+                                        else if (voltsAsPercent <= 30) battery.Color = Color.FromHex("#dddd00");
+                                        else battery.Color = Color.FromHex("#008000");
                                     });
                                     break;
                                 }
                             case 76: //LUX
                                 {
-
-                                    var luxValueAsString = args.Characteristic.StringValue.Substring(1);
-                                    var luxValue = Int16.Parse(luxValueAsString);
-                                    //value maxes at 4097, but realistic daylight is...~200
-                                    var luxPercent = (luxValue / 200) * 100;
-                                    Device.BeginInvokeOnMainThread(() =>
-                                    {
-                                        lux.Value = luxPercent;
-
-                                        if (luxPercent > 85) lux.Color = ConvertCmykToRgb(0, 0, 1, 0);
-                                        if (luxPercent > 60) lux.Color = ConvertCmykToRgb(0, 0, .77f, .33f);
-                                        if (luxPercent > 45) lux.Color = ConvertCmykToRgb(0, 0, .54f, .66f);
-                                        if (luxPercent > 25) lux.Color = ConvertCmykToRgb(0, 0, .34f, .70f);
-                                        else lux.Color = ConvertCmykToRgb(0, 0, .26f, .73f);
-                                    });
+                                    /* var luxValueAsString = args.Characteristic.StringValue.Substring(1);
+                                     var luxValue = Int16.Parse(luxValueAsString);
+                                     //value maxes at 4097, but realistic daylight is...~200
+                                     var luxPercent = (float)(luxValue / 2);
+                                     Device.BeginInvokeOnMainThread(() =>
+                                     {
+                                         lux.Text = $"{luxPercent}%";
+                                         if (luxPercent > 85) lux.BackgroundColor = Color.FromHex("#fff100");
+                                         if (luxPercent > 60) lux.BackgroundColor = Color.FromHex("#c2ac11");
+                                         if (luxPercent > 45) lux.BackgroundColor = Color.FromHex("#fcdf03");
+                                         if (luxPercent > 25) lux.BackgroundColor = Color.FromHex("#736b32");
+                                         else lux.BackgroundColor = Color.FromHex("#45422d");
+                                     });*/
+                                    break;
+                                }
+                            case 88: //History
+                                {
+                                    //M=77 (millis)
+                                    var floop = args.Characteristic.StringValue.Substring(1);
                                     break;
                                 }
                             default:
                                 {
-                                    Device.BeginInvokeOnMainThread(() =>
-                                    {
-                                        DisplayAlert("Weird",
-                                            $"Unknown data was sent to me: {args.Characteristic.Value[0]}",
-                                            "That's odd...");
-                                    });
+                                    /* Device.BeginInvokeOnMainThread(() =>
+                                     {
+                                         DisplayAlert("Weird",
+                                             $"Unknown data was sent to me: {args.Characteristic.Value[0]}",
+                                             "That's odd...");
+                                     });*/
                                     break;
                                 }
                         }
@@ -152,134 +190,30 @@ namespace SenseWeather
             }
         }
 
-        private void HandleTemperature(string tempCAsString)
+        private void HandleTemperature(string tempCAsString, bool changeUnits)
         {
             var tempC = float.Parse(tempCAsString);
             var tempF = tempC * 9 / 5 + 32;
-
-            //Show to F
-            if (String.IsNullOrEmpty(tempHeader.Text) || tempHeader.Text.EndsWith("C"))
+            Device.BeginInvokeOnMainThread(() =>
             {
-                Device.BeginInvokeOnMainThread(() =>
-                {
-                    tempScale.Ranges.Clear();
-                    tempScale.StartValue = -20;
-                    tempScale.EndValue = 120;
-
-                    tempScale.Ranges.Add(new Syncfusion.SfGauge.XForms.Range()
-                    {
-                        StartValue = -20,
-                        EndValue = 0,
-                        Color = Color.FromHex("#94b6d4")
-                    });
-                    tempScale.Ranges.Add(new Syncfusion.SfGauge.XForms.Range()
-                    {
-                        StartValue = 0,
-                        EndValue = 32,
-                        Color = Color.SteelBlue
-                    }); ;
-                    tempScale.Ranges.Add(new Syncfusion.SfGauge.XForms.Range()
-                    {
-                        StartValue = 32,
-                        EndValue = 80,
-                        Color = Color.FromHex("#90cc72")
-                    });
-                    tempScale.Ranges.Add(new Syncfusion.SfGauge.XForms.Range()
-                    {
-                        StartValue = 80,
-                        EndValue = 100,
-                        Color = Color.Orange
-                    });
-                    tempScale.Ranges.Add(new Syncfusion.SfGauge.XForms.Range()
-                    {
-                        StartValue = 100,
-                        EndValue = 120,
-                        Color = Color.Red
-                    });
-
-
-                    tempHeader.Text = $"{tempF:0.0}° F";
-                    tempHeader2.Text = $"{tempC:0.0}° C";
-                    tempNeedle.Value = tempF;
-                });
-            }
-            else //show C
-            {
-                Device.BeginInvokeOnMainThread(() =>
-                {
-                    tempScale.Ranges.Clear();
-
-                    tempScale.StartValue = -30;
-                    tempScale.EndValue = 50;
-
-                    tempScale.Ranges.Add(new Syncfusion.SfGauge.XForms.Range()
-                    {
-                        StartValue = -30,
-                        EndValue = -18,
-                        Color = Color.FromHex("#94b6d4")
-                    });
-                    tempScale.Ranges.Add(new Syncfusion.SfGauge.XForms.Range()
-                    {
-                        StartValue = -18,
-                        EndValue = 0,
-                        Color = Color.SteelBlue
-                    }); ;
-                    tempScale.Ranges.Add(new Syncfusion.SfGauge.XForms.Range()
-                    {
-                        StartValue = 0,
-                        EndValue = 27,
-                        Color = Color.FromHex("#90cc72")
-                    });
-                    tempScale.Ranges.Add(new Syncfusion.SfGauge.XForms.Range()
-                    {
-                        StartValue = 27,
-                        EndValue = 38,
-                        Color = Color.Orange
-                    });
-                    tempScale.Ranges.Add(new Syncfusion.SfGauge.XForms.Range()
-                    {
-                        StartValue = 38,
-                        EndValue = 50,
-                        Color = Color.Red
-                    });
-
-                    tempHeader.Text = $"{tempC:0.0}° C";
-                    tempHeader2.Text = $"{tempF:0.0}° F";
-                    tempNeedle.Value = tempC;
-                });
-            }
+                tempHeader.Text = $"{tempF:0.0}° F";
+                tempHeader2.Text = $"{tempC:0.0}° C";
+                tempFNeedle.Value = tempF;
+            });
         }
 
         private void HandlePressure(string pressureAsString)
         {
-            var pressureInhPa = float.Parse(pressureAsString) / 1000;
+            var pressureInhPa = float.Parse(pressureAsString) / 100;
+            var pressureInmmHg = pressureInhPa * 100 / 133.322387415;
 
-            if (string.IsNullOrEmpty(pressureHeader2.Text) || pressureHeader2.Text == "hPa") //show in mmHg
+            Device.BeginInvokeOnMainThread(() =>
             {
-                var pressureInmmHg = pressureInhPa * 100 / 133.322387415;
+                pressureHeadermmHg.Text = $"{pressureInmmHg:0.0}";
+                pressureHeaderhPa.Text = $"{pressureInhPa:0.0}";
+                pressureNeedle.Value = pressureInmmHg;
+            });
 
-                Device.BeginInvokeOnMainThread(() =>
-                {
-
-                    pressureRange.StartValue = 650;
-                    pressureRange.EndValue = 820;
-                    pressureHeader2.Text = "mmHg";
-                    pressureHeader.Text = $"{pressureInmmHg:0.0}";
-                    pressureNeedle.Value = pressureInmmHg;
-                });
-            }
-            else
-            {
-                Device.BeginInvokeOnMainThread(() =>
-                {
-                    pressureRange.StartValue = 850;
-                    pressureRange.EndValue = 1094;
-                    pressureHeader2.Text = "hPa";
-
-                    pressureHeader.Text = $"{pressureInhPa:0.0}";
-                    pressureNeedle.Value = pressureInhPa;
-                });
-            }
         }
 
         private async Task AskForData(bool OkToRetry = true)
@@ -287,18 +221,24 @@ namespace SenseWeather
             btnRefresh.IsEnabled = false;
             if (_device == null)
             {
-                _device = await BleDevice.GetWeatherStationDevice();
                 if (BleDevice.WeatherStationDevice == null)
                 {
-                    Device.BeginInvokeOnMainThread(() =>
-                     {
-                         DisplayAlert("Can't Connect",
-                             "Unable to connect to the weather station. Be sure you're " +
-                             "within range and have bluetooth enabled!",
-                             "Harumph");
-                     });
-                    btnRefresh.IsEnabled = true;
+                    await BleDevice.GetWeatherStationDevice();
+                }
 
+                _device = BleDevice.WeatherStationDevice;
+                charSend = await weatherService.GetCharacteristicAsync(GattConstants.UartRxCharacteristic);
+
+                if (_device == null)
+                {
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        DisplayAlert("Can't Connect",
+                            "Unable to connect to the weather station. Be sure you're " +
+                            "within range and have bluetooth enabled!",
+                            "Harumph");
+                    });
+                    btnRefresh.IsEnabled = true;
                 }
                 return;
             }
@@ -309,11 +249,13 @@ namespace SenseWeather
                 {
                     await AskForTemp();
                     await AskForPressure();
-                    byte[] senddata = Encoding.UTF8.GetBytes("h");
+                    byte[] senddata = Encoding.UTF8.GetBytes("H");
                     await charSend.WriteAsync(senddata);
-                    senddata = Encoding.UTF8.GetBytes("b");
+                    senddata = Encoding.UTF8.GetBytes("B");
                     await charSend.WriteAsync(senddata);
-                    senddata = Encoding.UTF8.GetBytes("l");
+                    senddata = Encoding.UTF8.GetBytes("L");
+                    await charSend.WriteAsync(senddata);
+                    senddata = Encoding.UTF8.GetBytes("X");
                     await charSend.WriteAsync(senddata);
                 }
                 catch (Exception ex)
@@ -336,17 +278,20 @@ namespace SenseWeather
             {
                 await SetupWeatherService();
             }
-
+            currentTime.Text = $"{DateTime.Now.ToShortTimeString()}";
+            currentDate.Text = $"{DateTime.Now.ToShortDateString()}";
             btnRefresh.IsEnabled = true;
         }
 
         private async Task AskForTemp()
         {
+            charSend = await weatherService.GetCharacteristicAsync(GattConstants.UartRxCharacteristic);
             byte[] senddata = Encoding.UTF8.GetBytes("t");
             await charSend.WriteAsync(senddata);
         }
         private async Task AskForPressure()
         {
+            charSend = await weatherService.GetCharacteristicAsync(GattConstants.UartRxCharacteristic);
             byte[] senddata = Encoding.UTF8.GetBytes("p");
             await charSend.WriteAsync(senddata);
         }
@@ -354,42 +299,6 @@ namespace SenseWeather
         private async void RefreshButton_Clicked(object sender, EventArgs e)
         {
             await AskForData();
-        }
-
-        public static Color ConvertCmykToRgb(float c, float m, float y, float k)
-        {
-            int r;
-            int g;
-            int b;
-
-            r = Convert.ToInt32(255 * (1 - c) * (1 - k));
-            g = Convert.ToInt32(255 * (1 - m) * (1 - k));
-            b = Convert.ToInt32(255 * (1 - y) * (1 - k));
-
-            return Color.FromRgba(r, g, b, 1);
-        }
-
-        async void Temperature_Tapped(System.Object sender, System.EventArgs e)
-        {
-            try
-            {
-                await AskForTemp();
-            }
-            catch (Exception ex)
-            {
-                if (ex.GetType() == typeof(CharacteristicReadException))
-                {
-                    await AskForTemp();
-                }
-                else
-                {
-                    await DisplayAlert("Error", ex.ToString(), "Wuh?");
-                }
-            }
-        }
-        async void Pressure_Tapped(System.Object sender, System.EventArgs e)
-        {
-            await AskForPressure();
         }
     }
 }
