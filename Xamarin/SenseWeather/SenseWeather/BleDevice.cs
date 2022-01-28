@@ -25,7 +25,7 @@ namespace SenseWeather
             throw new NotImplementedException();
         }
 
-        public static bool IsBluetoothConnected()
+        public static bool IsBluetoothEnabled()
         {
             var ble = CrossBluetoothLE.Current;
             if (ble.State == BluetoothState.Off)
@@ -40,7 +40,7 @@ namespace SenseWeather
 
         public static async Task<string> GetWeatherStationDevice()
         {
-            if (!IsBluetoothConnected())
+            if (!IsBluetoothEnabled())
             {
                 return null;
             }
@@ -57,34 +57,40 @@ namespace SenseWeather
             {
                 return null;
             }*/
-
-            var device = await _bluetoothAdapter.ConnectToKnownDeviceAsync(weatherStationGuid, _connectParameters);
-            if (device != null && device.State == DeviceState.Connected)
+            try
             {
-                WeatherStationDevice = device;
-                return "success";
+                var device = await _bluetoothAdapter.ConnectToKnownDeviceAsync(weatherStationGuid, _connectParameters);
+                if (device != null && device.State == DeviceState.Connected)
+                {
+                    WeatherStationDevice = device;
+                    return "success";
+                }
+                else //device is null
+                {
+                    try
+                    {
+                        await _bluetoothAdapter.ConnectToKnownDeviceAsync(weatherStationGuid, _connectParameters);
+                        if (device.State != DeviceState.Connected)
+                        {
+                            //TODO error!!
+                            return "ERROR: Device is no longer connected!";
+                        }
+                        else
+                        {
+                            WeatherStationDevice = device;
+                            return "reconnect worked!";
+                        }
+                    }
+                    catch
+                    {
+                        WeatherStationDevice = null;
+                        return "ERROR: ConnectToKnownDevice has failed.";
+                    }
+                }
             }
-            else
+            catch (Exception ex)
             {
-                try
-                {
-                    await _bluetoothAdapter.ConnectToKnownDeviceAsync(weatherStationGuid, _connectParameters);
-                    if (device.State != DeviceState.Connected)
-                    {
-                        //TODO error!!
-                        return "ERROR: Device is no longer connected!";
-                    }
-                    else
-                    {
-                        WeatherStationDevice = device;
-                        return "reconnect worked!";
-                    }
-                }
-                catch
-                {
-                    WeatherStationDevice = null;
-                    return "ERROR: ConnectToKnownDevice has failed.";
-                }
+                return ex.ToString();
             }
         }
 

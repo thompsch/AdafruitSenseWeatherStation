@@ -7,6 +7,7 @@ using Plugin.BLE.Abstractions.Contracts;
 using Plugin.BLE.Abstractions.EventArgs;
 using Plugin.BLE.Abstractions.Exceptions;
 using SenseWeather.Models;
+using Syncfusion.SfChart.XForms;
 using Xamarin.Forms;
 
 namespace SenseWeather
@@ -42,7 +43,7 @@ namespace SenseWeather
 
         private async Task GetStarted()
         {
-            if (!BleDevice.IsBluetoothConnected())
+            if (!BleDevice.IsBluetoothEnabled())
             {
                 await DisplayAlert("Bluetooth Disabled", "Dude, turn on your Bluetooth!", "Oops.");
                 return;
@@ -188,10 +189,10 @@ namespace SenseWeather
             };
 
 
-            for (int x = 0; x < 3; x++)
+            foreach (var ti in testInput)
             {
 
-                var value = testInput[x].Substring(1);
+                var value = ti.Substring(1);
                 var parts = value.Split('+');
                 var key = Double.Parse(parts[0]);
                 WeatherModel wm;
@@ -213,6 +214,14 @@ namespace SenseWeather
                         Device.BeginInvokeOnMainThread(() =>
                         {
                             WeatherViewModel.AddToData(WeatherDictionary[key]);
+
+                            NumericalStripLine stripLine = new NumericalStripLine()
+                            {
+                                Start = key,
+                                Width = 2,
+                                StrokeColor = Color.FromHex("#232323")
+                            };
+                            primaryNumericalAxis.StripLines.Add(stripLine);
                         });
                     }
                 }
@@ -225,7 +234,6 @@ namespace SenseWeather
 
         private void HandleHistory(CharacteristicUpdatedEventArgs args)
         {
-            //HandleHistoryTest();
             //X367+T25.24X367+H38.92X367+P102479.67
             var value = args.Characteristic.StringValue.Substring(1);
             var parts = value.Split('+');
@@ -312,6 +320,7 @@ namespace SenseWeather
 
         private async Task AskForHistory(bool initialLoad)
         {
+            //HandleHistoryTest();
             //only update history if it's been more than 15 minutes since
             //last check. station updates every hour, so this is some
             //arbitrary limit to reduce BLE traffic and power usage....theoretically
@@ -392,10 +401,10 @@ namespace SenseWeather
             else
             {
                 await SetupWeatherService();
-                //await AskForData(); DNAGERLOOP
+                //await AskForData(); DANGERLOOP
             }
-            currentTime.Text = $"{DateTime.Now.ToShortTimeString()}";
-            currentDate.Text = $"{DateTime.Now.ToShortDateString()}";
+            currentDateTime.Text = $"{DateTime.Now.ToShortTimeString()}{System.Environment.NewLine}{DateTime.Now.ToShortDateString()}";
+            // currentDate.Text = $"{DateTime.Now.ToShortDateString()}";
             btnRefresh.IsEnabled = true;
         }
 
@@ -430,7 +439,7 @@ namespace SenseWeather
         {
             await AskForData();
             //TODO: set back to false
-            await AskForHistory(false);
+            await AskForHistory(true);
         }
 
 
@@ -457,6 +466,11 @@ namespace SenseWeather
             {
                 DisplayAlert("error", $"Error handling the historic data.\n{feck}", "Drat.");
             }
+        }
+
+        async void History_Tapped(System.Object sender, System.EventArgs e)
+        {
+            await AskForHistory(true);
         }
     }
 }
