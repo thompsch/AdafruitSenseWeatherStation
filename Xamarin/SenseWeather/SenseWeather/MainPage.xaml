@@ -1,0 +1,362 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:gauge="clr-namespace:Syncfusion.SfGauge.XForms;assembly=Syncfusion.SfGauge.XForms"
+             xmlns:graph="clr-namespace:Syncfusion.SfChart.XForms;assembly=Syncfusion.SfChart.XForms"
+             xmlns:border="clr-namespace:Syncfusion.XForms.Border;assembly=Syncfusion.Core.XForms"
+             xmlns:local="clr-namespace:SenseWeather.Models"
+             mc:Ignorable="d"
+             Title="Woodsong Weather"
+             Visual="Material"
+             x:Class="SenseWeather.MainPage"
+             BindingContext="SenseWeather.Models.WeatherViewModel">
+    <ContentPage.Content>
+        <Grid BackgroundColor="#d3dece">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="8*" />
+                <RowDefinition Height="7*" />
+                <RowDefinition Height="4*" />
+                <RowDefinition Height="2*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- DateTime -->
+            <Label HorizontalTextAlignment="Start" Padding="20,10,0,14" Grid.Row="4" Grid.Column="0"  x:Name="currentDateTime"
+                   TextColor="#343467" FontSize="16"
+                   Text="now&#x0a;now" HorizontalOptions="StartAndExpand" VerticalOptions="Center"/>
+
+            <!--TEMP-->
+            <gauge:SfCircularGauge Margin="0,0,0,-40" Grid.Row="1" Grid.ColumnSpan="4">
+                <gauge:SfCircularGauge.Scales>
+                    <gauge:Scale x:Name="tempFScale" StartValue="-20" EndValue="120"
+                                 UseRangeColorForLabels="True" LabelFontSize="18"
+                                  FontAttributes="Bold"
+                                LabelOffset="0.88" ScaleStartOffset="0.7" ScaleEndOffset="0.69">
+                        <gauge:Scale.Ranges>
+                            <gauge:Range StartValue="-20" EndValue="0" Color="#94b6d4"/>
+                            <gauge:Range StartValue="0" EndValue="32" Color="SteelBlue"/>
+                            <gauge:Range StartValue="32" EndValue="80" Color="#90cc72"/>
+                            <gauge:Range StartValue="80" EndValue="100" Color="Orange"/>
+                            <gauge:Range StartValue="100" EndValue="120" Color="Red"/>
+                        </gauge:Scale.Ranges>
+                        <gauge:Scale.MajorTickSettings>
+                            <gauge:TickSettings Thickness="3" Color ="Black" Length="18"  StartOffset="0.7" EndOffset="0.77"  />
+                        </gauge:Scale.MajorTickSettings>
+                        <gauge:Scale.MinorTickSettings>
+                            <gauge:TickSettings Thickness="0" Color ="Black" Length="14"  StartOffset="0.7" EndOffset="0.77"  />
+                        </gauge:Scale.MinorTickSettings>
+                        <gauge:Scale.Pointers>
+                            <gauge:NeedlePointer Color="#676767" KnobStrokeColor="Black" KnobColor="#565656" x:Name="tempFNeedle"/>
+                        </gauge:Scale.Pointers>
+                    </gauge:Scale>
+                    <gauge:Scale x:Name="tempCScale" StartValue="-30" EndValue="50"
+                                 UseRangeColorForLabels="True" LabelFontSize="12"
+                                 LabelOffset="0.45" LabelColor="#333333"
+                                 ScaleStartOffset="0.65" ScaleEndOffset="0.67">
+                        <gauge:Scale.Ranges>
+                            <gauge:Range StartValue="-30" EndValue="-18" Color="#94b6d4"/>
+                            <gauge:Range StartValue="-18" EndValue="0" Color="SteelBlue"/>
+                            <gauge:Range StartValue="0" EndValue="27" Color="#90cc72"/>
+                            <gauge:Range StartValue="27" EndValue="38" Color="Orange"/>
+                            <gauge:Range StartValue="38" EndValue="50" Color="Red"/>
+                        </gauge:Scale.Ranges>
+                        <gauge:Scale.MajorTickSettings>
+                            <gauge:TickSettings Thickness="1" Length="14" StartOffset="0.64" EndOffset="0.57"  />
+                        </gauge:Scale.MajorTickSettings>
+                        <gauge:Scale.MinorTickSettings>
+                            <gauge:TickSettings Thickness="1" Length="8" StartOffset="0.64" EndOffset="0.57"  />
+                        </gauge:Scale.MinorTickSettings>
+                    </gauge:Scale>
+                </gauge:SfCircularGauge.Scales>
+                <gauge:SfCircularGauge.Headers>
+                    <gauge:Header x:Name="tempHeader" TextSize="28" ForegroundColor="Black"
+                                  FontAttributes="Bold" VerticalHeaderPosition="Start"
+                                  />
+                    <gauge:Header x:Name="tempHeader2" TextSize="18" ForegroundColor="Black"
+                                  VerticalHeaderPosition="End"/>
+                </gauge:SfCircularGauge.Headers>
+            </gauge:SfCircularGauge>
+            <!-- ************** Humidity ********************* -->
+            <gauge:SfCircularGauge Margin="10,-20,3,0" Grid.Row="2"
+                                   Grid.Column="0" Grid.ColumnSpan="2">
+                <gauge:SfCircularGauge.Scales>
+                    <gauge:Scale StartValue="0" EndValue="100"
+                                 UseRangeColorForLabels="False" LabelFontSize="12"
+                                 RimColor="#afcc34" FontAttributes="Bold"
+                                 LabelOffset=".85"
+                                 ScaleStartOffset="0.65" ScaleEndOffset="0.68">
+                        <gauge:Scale.Ranges>
+
+                            <gauge:Range  StartValue="0" EndValue="100" Color="Transparent"/>
+                        </gauge:Scale.Ranges>
+                        <gauge:Scale.Pointers>
+                            <gauge:NeedlePointer KnobRadius="5" KnobStrokeColor="#8daa12" KnobColor="#9ebb23"
+                                                 Color="#afcc34" x:Name="humidityNeedle"
+                                                 LengthFactor="0.75"/>
+                        </gauge:Scale.Pointers>
+                        <gauge:Scale.MajorTickSettings>
+                            <gauge:TickSettings Thickness="1" Length="18" StartOffset="0.75" EndOffset="0.66" />
+                        </gauge:Scale.MajorTickSettings>
+                        <gauge:Scale.MinorTickSettings>
+                            <gauge:TickSettings Thickness="0" Length="10" StartOffset="0.75" EndOffset="0.66"  />
+                        </gauge:Scale.MinorTickSettings>
+                    </gauge:Scale>
+
+                </gauge:SfCircularGauge.Scales>
+                <gauge:SfCircularGauge.Headers>
+                    <gauge:Header x:Name="humidityHeader" TextSize="18" ForegroundColor="Black" FontAttributes="Bold"
+                                  VerticalHeaderPosition="Center"/>
+                </gauge:SfCircularGauge.Headers>
+            </gauge:SfCircularGauge>
+
+            <!-- ************* Pressure ********************** -->
+            <gauge:SfCircularGauge Margin="3,-20,10,0" Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" >
+                <gauge:SfCircularGauge.Scales>
+                    <gauge:Scale x:Name="pressureScalemmHg" StartValue="650" EndValue="813"
+                                 UseRangeColorForLabels="False" LabelFontSize="9"
+                                 LabelOffset="0.5" ScaleStartOffset="0.65" ScaleEndOffset="0.68"
+                                 LabelColor="#443585"
+                                 Interval="20"
+                                 >
+                        <gauge:Scale.Ranges>
+                            <gauge:Range x:Name="pressureRangemmHg" StartValue="650" EndValue="820" Color="Transparent" />
+                        </gauge:Scale.Ranges>
+                        <gauge:Scale.Pointers>
+                            <gauge:NeedlePointer x:Name="pressureNeedle" Color="#FF9370DB"
+                                                 KnobRadius="5" KnobStrokeColor="#7f60bf" KnobColor="#7f60bf"
+                                                 LengthFactor="0.70"/>
+                        </gauge:Scale.Pointers>
+                        <gauge:Scale.MajorTickSettings>
+                            <gauge:TickSettings Color="Black" Thickness="1" Length="10" StartOffset="0.6" EndOffset="0.66"/>
+                        </gauge:Scale.MajorTickSettings>
+                        <gauge:Scale.MinorTickSettings>
+                            <gauge:TickSettings Thickness="0" Length="0" Color="Transparent" />
+                        </gauge:Scale.MinorTickSettings>
+                    </gauge:Scale>
+                    <gauge:Scale x:Name="pressureScalemBar" StartValue="866" EndValue="1086"
+                                 LabelFontSize="9" FontAttributes="Bold"
+                                 LabelColor="#000000"
+                                 LabelOffset=".85" RimColor="#FF9370DB" 
+                                 ScaleStartOffset="0.65" ScaleEndOffset="0.68"
+                                 Interval="20">
+                        <gauge:Scale.Ranges>
+                            <gauge:Range Color="#FF9370DB" x:Name="pressureRangemBar" Thickness="1" Offset="-10"
+                                         StartValue="866" EndValue="1084" />
+                        </gauge:Scale.Ranges>
+
+                        <gauge:Scale.MajorTickSettings>
+                            <gauge:TickSettings Thickness="2" Length="0"  Color="#FF9370DB" StartOffset="0.75" EndOffset="0.66" />
+                        </gauge:Scale.MajorTickSettings>
+                        <gauge:Scale.MinorTickSettings>
+                            <gauge:TickSettings Thickness="0" Length="0" Color="Transparent" />
+                        </gauge:Scale.MinorTickSettings>
+                    </gauge:Scale>
+                </gauge:SfCircularGauge.Scales>
+                <gauge:SfCircularGauge.Headers>
+                    <gauge:Header x:Name="pressureHeadermmHg" TextSize="14" ForegroundColor="Black" 
+                                  VerticalHeaderPosition="End"/>
+
+                    <gauge:Header x:Name="pressureHeaderhPa" TextSize="18" ForegroundColor="Black" FontAttributes="Bold"
+                                  VerticalHeaderPosition="Start"/>
+                </gauge:SfCircularGauge.Headers>
+
+            </gauge:SfCircularGauge>
+
+
+            <!-- ************ refresh button ***************-->
+            <Button x:Name="btnRefresh" Text="Refresh" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
+                   Clicked="RefreshButton_Clicked" BackgroundColor="#a3bcc4"
+                    FontAttributes="Bold" CornerRadius="25" TextColor="#343467" FontSize="16"
+                    Margin="10,5,10,15"/>
+            <!-- ************** battery ********************-->
+            <Label Grid.Row="4" Grid.Column="3" x:Name="lblBatteryPercent"
+                   FontSize="14" Text="n/a" HorizontalTextAlignment="Start"
+                  VerticalTextAlignment="Start" Margin="0,12,0,0"
+                    TextColor="#223322" />
+
+            <gauge:SfLinearGauge HeightRequest="10" Grid.Row="4" Grid.Column="3" Grid.ColumnSpan="1"
+                                 HorizontalOptions="End" Margin="0,30,20,10">
+                <gauge:SfLinearGauge.Scales>
+                    <gauge:LinearScale
+                            Offset="-10"
+                            LabelColor="#223322"
+                             FontAttributes="Bold"
+                            LabelOffset="-10"
+                                    ShowTicks="True"
+                                    ShowLabels="True"
+                                    MinimumValue="0" 
+                                    MaximumValue="100"
+                            MinorTicksPerInterval="1"
+                                    ScaleBarColor="#ddeedd"
+                                    ScaleOffset="0" 
+                                    ScaleBarSize="10">
+                        <gauge:LinearScale.Pointers>
+                            <gauge:BarPointer x:Name="battery"
+                                     Thickness="18"/>
+                        </gauge:LinearScale.Pointers>
+                        <gauge:LinearScale.MajorTickSettings>
+                            <gauge:LinearTickSettings Thickness="1" Color ="#979797" Length="12" Offset ="-12" />
+                        </gauge:LinearScale.MajorTickSettings>
+                        <gauge:LinearScale.MinorTickSettings>
+                            <gauge:LinearTickSettings Thickness="1" Length ="12" Offset ="-12" Color ="#cccccc"/>
+                        </gauge:LinearScale.MinorTickSettings>
+                    </gauge:LinearScale>
+                </gauge:SfLinearGauge.Scales>
+            </gauge:SfLinearGauge>
+
+            <!-- ************* HISTORY *************** -->
+            <Frame Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" Grid.RowSpan="1"
+                   IsVisible="True" BorderColor="#005688" BackgroundColor="Transparent"
+                   Padding="2" Margin="5,-20,5,10" CornerRadius="5" VerticalOptions="Start">
+
+                <graph:SfChart x:Name="Chart" HorizontalOptions="FillAndExpand"
+                       VerticalOptions="FillAndExpand" ChartPadding="0,0,30,0"
+                               BackgroundColor="#e4efdf"
+                               AreaBorderWidth="1">
+                    <graph:SfChart.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="History_Tapped"/>
+                    </graph:SfChart.GestureRecognizers>
+                    <graph:SfChart.ChartBehaviors>
+                        <graph:ChartZoomPanBehavior EnablePanning="False" EnableZooming="False" EnableDoubleTap="False"/>
+                    </graph:SfChart.ChartBehaviors>
+                    <graph:SfChart.PrimaryAxis >
+
+                        <graph:NumericalAxis x:Name="primaryNumericalAxis" Minimum="0" ShowMajorGridLines="False">
+                            <graph:NumericalAxis.Title>
+                                <graph:ChartAxisTitle Text="Time (more recent&#x279F;)" FontSize="10" Margin="0,-4,0,0"/>
+                            </graph:NumericalAxis.Title>
+                            <graph:NumericalAxis.AxisLineStyle>
+                                <graph:ChartLineStyle StrokeColor="Black"  StrokeWidth="1">
+                                </graph:ChartLineStyle>
+                            </graph:NumericalAxis.AxisLineStyle>
+                            <graph:NumericalAxis.MajorTickStyle>
+                                <graph:ChartAxisTickStyle TickSize="0" />
+                            </graph:NumericalAxis.MajorTickStyle>
+                            <graph:NumericalAxis.LabelStyle>
+                                <graph:ChartAxisLabelStyle  FontSize="0.01" x:Name="primaryAxisLabelStyle"/>
+                            </graph:NumericalAxis.LabelStyle>
+                            <graph:NumericalAxis.StripLines>
+                                <graph:NumericalStripLine Width="2" StrokeColor="Red" Start="0">
+
+                                </graph:NumericalStripLine>
+                            </graph:NumericalAxis.StripLines>
+                        </graph:NumericalAxis>
+                    </graph:SfChart.PrimaryAxis>
+                    <graph:SfChart.SecondaryAxis>
+                        <graph:NumericalAxis Minimum="0"
+                                             Maximum="100"
+                                             ShowMajorGridLines="False">
+                            <graph:NumericalAxis.AxisLineStyle>
+                                <graph:ChartLineStyle StrokeColor="Black" StrokeWidth="1" >
+                                </graph:ChartLineStyle>
+                            </graph:NumericalAxis.AxisLineStyle>
+                            <graph:NumericalAxis.MajorTickStyle>
+                                <graph:ChartAxisTickStyle StrokeColor="White" TickSize="0" />
+                            </graph:NumericalAxis.MajorTickStyle>
+                            <graph:NumericalAxis.LabelStyle>
+                                <graph:ChartAxisLabelStyle FontSize="0.01" x:Name="secondaryAxisLabelStyle"/>
+                            </graph:NumericalAxis.LabelStyle>
+
+                        </graph:NumericalAxis>
+                    </graph:SfChart.SecondaryAxis>
+                    <graph:SfChart.ColorModel>
+                        <graph:ChartColorModel Palette="Natural" />
+                    </graph:SfChart.ColorModel>
+                    <graph:SfChart.Series>
+                        <graph:SplineSeries
+                            x:Name="splineSeries1"
+                            ItemsSource="{Binding Source={x:Static local:WeatherViewModel.Data}}"
+                            XBindingPath="RelativeTimeStamp"
+                            YBindingPath="TempValue"
+                            StrokeWidth="2"
+                            Color="#dd0000"
+                            EnableTooltip="false"
+                            SplineType="Monotonic">
+
+                            <graph:SplineSeries.DataMarker>
+                                <graph:ChartDataMarker>
+                                    <graph:ChartDataMarker.LabelTemplate>
+                                        <DataTemplate>
+                                            <border:SfBorder 
+                                            HeightRequest="3" 
+                                            CornerRadius="3" 
+                                            WidthRequest="3" 
+                                            BorderColor="#dd0000" />
+                                        </DataTemplate>
+                                    </graph:ChartDataMarker.LabelTemplate>
+                                    <graph:ChartDataMarker.LabelStyle>
+                                        <graph:DataMarkerLabelStyle LabelPosition="Center"/>
+                                    </graph:ChartDataMarker.LabelStyle>
+                                </graph:ChartDataMarker>
+                            </graph:SplineSeries.DataMarker>
+                        </graph:SplineSeries>
+
+                        <graph:SplineSeries
+                            x:Name="splineSeries2"
+                            ItemsSource="{Binding Source={x:Static local:WeatherViewModel.Data}}"
+                            XBindingPath="RelativeTimeStamp"
+                            YBindingPath="HumidityValue"
+                            Color="#afcc34"
+                            StrokeWidth="2"
+                            EnableTooltip="false"
+                            SplineType="Monotonic">
+                            <graph:SplineSeries.DataMarker>
+                                <graph:ChartDataMarker x:Name="dataMarker2">
+                                    <graph:ChartDataMarker.LabelTemplate>
+                                        <DataTemplate>
+                                            <border:SfBorder 
+                                            HeightRequest="3" 
+                                            CornerRadius="0" 
+                                            WidthRequest="3"
+                                            BorderColor="#afcc34"
+                                            BorderWidth="5" />
+                                        </DataTemplate>
+                                    </graph:ChartDataMarker.LabelTemplate>
+                                    <graph:ChartDataMarker.LabelStyle>
+                                        <graph:DataMarkerLabelStyle LabelPosition="Center"/>
+                                    </graph:ChartDataMarker.LabelStyle>
+                                </graph:ChartDataMarker>
+                            </graph:SplineSeries.DataMarker>
+                        </graph:SplineSeries>
+                        <graph:SplineSeries
+                            x:Name="splineSeries3"
+                            ItemsSource="{Binding Source={x:Static local:WeatherViewModel.Data}}"
+                            XBindingPath="RelativeTimeStamp"
+                            YBindingPath="PressureValue"
+                            StrokeWidth="2"
+                            Color="#FF9370DB"
+                            EnableTooltip="false"
+                            SplineType="Monotonic">
+                            <graph:SplineSeries.DataMarker>
+                                <graph:ChartDataMarker x:Name="dataMarker3">
+                                    <graph:ChartDataMarker.LabelTemplate>
+                                        <DataTemplate>
+                                            <border:SfBorder 
+                                           HeightRequest="3" 
+                                            CornerRadius="0" 
+                                            WidthRequest="3"
+                                            BorderColor="#FF9370DB" 
+                                            BorderWidth="5" />
+                                        </DataTemplate>
+                                    </graph:ChartDataMarker.LabelTemplate>
+                                    <graph:ChartDataMarker.LabelStyle>
+                                        <graph:DataMarkerLabelStyle LabelPosition="Center"/>
+                                    </graph:ChartDataMarker.LabelStyle>
+                                </graph:ChartDataMarker>
+                            </graph:SplineSeries.DataMarker>
+                        </graph:SplineSeries>
+                    </graph:SfChart.Series>
+                </graph:SfChart>
+
+            </Frame>
+        </Grid>
+    </ContentPage.Content>
+</ContentPage>
