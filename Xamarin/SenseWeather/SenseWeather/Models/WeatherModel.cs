@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
 
 namespace SenseWeather.Models
 {
@@ -14,33 +16,60 @@ namespace SenseWeather.Models
         public WeatherModel()
         {
         }
+        public override bool Equals(object obj)
+        {
+            try
+            {
+                var wd = (WeatherModel)obj;
+                return (this.RelativeTimeStamp == wd.RelativeTimeStamp &&
+                    this.TempValue == wd.TempValue &&
+                    this.PressureValue == wd.PressureValue &&
+                    this.HumidityValue == wd.HumidityValue);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+
     }
 
     public class WeatherViewModel
     {
-        public List<WeatherModel> Data { get; set; }
-        private const int MaxPressureValue = 108400;
-        private const int MaxTemperatureValue = 120;
 
-        public WeatherViewModel()
+        public static event PropertyChangedEventHandler StaticPropertyChanged;
+        public static ObservableCollection<WeatherModel> Data { get; set; }
+
+        static WeatherViewModel()
         {
-            Data = new List<WeatherModel>()
-            {
-                ConvertValues(new WeatherModel { TempValue = 6.3, PressureValue = 2701, HumidityValue = .70, RelativeTimeStamp = 0 }),
-                ConvertValues(new WeatherModel { TempValue = 6.7, PressureValue = 2699, HumidityValue = .82, RelativeTimeStamp = 1 }),
-                ConvertValues(new WeatherModel { TempValue = 6.8, PressureValue = 2678, HumidityValue = .93, RelativeTimeStamp = 2 }),
-                ConvertValues(new WeatherModel { TempValue = 7.1, PressureValue = 2678, HumidityValue = .90, RelativeTimeStamp = 3 })
-            };
+            Data = new ObservableCollection<WeatherModel>();
         }
 
-        public static WeatherModel ConvertValues(WeatherModel input)
+        public static void AddToData(WeatherModel input)
         {
-            //TODO: standardize everything to %
+            var normalizedData = NormalizeToPercent(input);
+            if (!Data.Contains<WeatherModel>(normalizedData))
+            {
+                Data.Add(normalizedData);
+            }
+        }
+
+        internal static WeatherModel NormalizeToPercent(WeatherModel input)
+        {
+            int minPressureValue = 72000;
+            int maxPressureValue = 108400;
+
+            int minTempValue = -20;
+            int maxTempValue = 120;
+
+            //(input - min) / (mAx-MIN) * 100;
+
             return new WeatherModel()
             {
-                TempValue = input.TempValue / MaxTemperatureValue * 100,
-                PressureValue = input.PressureValue / MaxPressureValue * 100,
-                HumidityValue = input.HumidityValue,
+                TempValue = (input.TempValue - minTempValue) / (maxTempValue - minTempValue) * 100,
+                PressureValue = (input.PressureValue - minPressureValue) / (maxPressureValue - minPressureValue) * 100,
+                HumidityValue = input.HumidityValue, //already a % value
                 RelativeTimeStamp = input.RelativeTimeStamp
             };
         }

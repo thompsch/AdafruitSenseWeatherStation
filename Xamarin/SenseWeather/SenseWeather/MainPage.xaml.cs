@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using Plugin.BLE.Abstractions.Contracts;
+using Plugin.BLE.Abstractions.EventArgs;
 using Plugin.BLE.Abstractions.Exceptions;
+using SenseWeather.Models;
 using Xamarin.Forms;
 
 namespace SenseWeather
@@ -14,6 +17,8 @@ namespace SenseWeather
         private IService weatherService;
         private ICharacteristic charReceive;
         private ICharacteristic charSend;
+        public Dictionary<double, WeatherModel> WeatherDictionary = new Dictionary<double, WeatherModel>();
+        private DateTimeOffset lastHistoryCheck;
 
         public MainPage()
         {
@@ -24,6 +29,7 @@ namespace SenseWeather
         {
             try
             {
+                lastHistoryCheck = DateTimeOffset.Now;
                 await GetStarted();
                 base.OnAppearing();
             }
@@ -61,6 +67,7 @@ namespace SenseWeather
 
             await SetupWeatherService();
             await AskForData();
+            await AskForHistory(true);
 
         }
 
@@ -81,16 +88,11 @@ namespace SenseWeather
                         await BleDevice.WeatherStationDevice.GetServiceAsync(GattConstants.UartServiceId);
                 if (weatherService != null)
                 {
+                    charSend = await weatherService.GetCharacteristicAsync(GattConstants.UartRxCharacteristic);
                     charReceive = await weatherService.GetCharacteristicAsync(GattConstants.UartTxCharacteristic);
-
+                    await charReceive.StartUpdatesAsync();
                     charReceive.ValueUpdated += async (o, args) =>
                     {
-                        if (charReceive.StringValue.StartsWith("X"))
-                        {
-                            var borp = charReceive.StringValue;
-                            var burp = await charReceive.ReadAsync();
-                        }
-                        var boo = charReceive.StringValue;
                         switch (args.Characteristic.Value[0])
                         {
                             case 84: //temp F
@@ -105,75 +107,34 @@ namespace SenseWeather
                                 }
                             case 72: //Humidity
                                 {
-                                    var humidityAsString = args.Characteristic.StringValue.Substring(1);
-                                    var humidity = float.Parse(humidityAsString);
-                                    Device.BeginInvokeOnMainThread(() =>
-                                    {
-                                        humidityHeader.Text = $"{humidity:0.0}%";
-                                        humidityNeedle.Value = humidity;
-                                    });
+                                    HandleHumidity(args);
                                     break;
                                 }
                             case 66: //Battery
                                 {
-                                    var batteryAsString = args.Characteristic.StringValue.Substring(1);
-                                    var battVolts = float.Parse(batteryAsString);
-                                    var batteryMax = 4.2;
-                                    var batteryMin = 3.3;
-
-                                    var voltsAsPercent = (1 - (batteryMax - battVolts)) * 100;
-
-
-                                    // (battVolts - 3.6) / 4.14 * 100;
-                                    Device.BeginInvokeOnMainThread(() =>
-                                    {
-                                        lblBatteryPercent.Text = $"{battVolts}v ({voltsAsPercent:0}%)";
-                                        battery.Value = voltsAsPercent;// $"{battVolts:0.0} volts";
-                                        if (voltsAsPercent <= 10) battery.Color = Color.FromHex("#ff0000");
-                                        else if (voltsAsPercent <= 20) battery.Color = Color.FromHex("#ffa500");
-                                        else if (voltsAsPercent <= 30) battery.Color = Color.FromHex("#dddd00");
-                                        else battery.Color = Color.FromHex("#008000");
-                                    });
+                                    HandleBattery(args);
                                     break;
                                 }
                             case 76: //LUX
                                 {
-                                    /* var luxValueAsString = args.Characteristic.StringValue.Substring(1);
-                                     var luxValue = Int16.Parse(luxValueAsString);
-                                     //value maxes at 4097, but realistic daylight is...~200
-                                     var luxPercent = (float)(luxValue / 2);
-                                     Device.BeginInvokeOnMainThread(() =>
-                                     {
-                                         lux.Text = $"{luxPercent}%";
-                                         if (luxPercent > 85) lux.BackgroundColor = Color.FromHex("#fff100");
-                                         if (luxPercent > 60) lux.BackgroundColor = Color.FromHex("#c2ac11");
-                                         if (luxPercent > 45) lux.BackgroundColor = Color.FromHex("#fcdf03");
-                                         if (luxPercent > 25) lux.BackgroundColor = Color.FromHex("#736b32");
-                                         else lux.BackgroundColor = Color.FromHex("#45422d");
-                                     });*/
+                                    HandleLux(args);
                                     break;
                                 }
                             case 88: //History
                                 {
-                                    //M=77 (millis)
-                                    var floop = args.Characteristic.StringValue.Substring(1);
+                                    HandleHistory(args);
                                     break;
                                 }
                             default:
                                 {
-                                    /* Device.BeginInvokeOnMainThread(() =>
-                                     {
-                                         DisplayAlert("Weird",
-                                             $"Unknown data was sent to me: {args.Characteristic.Value[0]}",
-                                             "That's odd...");
-                                     });*/
+                                    //unknown data. 
                                     break;
                                 }
                         }
                     };
-                    await charReceive.StartUpdatesAsync();
 
-                    charSend = await weatherService.GetCharacteristicAsync(GattConstants.UartRxCharacteristic);
+
+                    // charSend = await weatherService.GetCharacteristicAsync(GattConstants.UartRxCharacteristic);
                 }
                 else
                 {
@@ -188,6 +149,140 @@ namespace SenseWeather
             {
                 btnRefresh.IsEnabled = true;
             }
+        }
+
+        private static void HandleLux(CharacteristicUpdatedEventArgs args)
+        {
+            /*var luxValueAsString = args.Characteristic.StringValue.Substring(1);
+            var luxValue = Int16.Parse(luxValueAsString);
+            //value maxes at 4097, but realistic daylight is...~200
+            var luxPercent = (float)(luxValue / 2);
+            Device.BeginInvokeOnMainThread(() =>
+            {
+                lux.Text = $"{luxPercent}%";
+                if (luxPercent > 85) lux.BackgroundColor = Color.FromHex("#fff100");
+                if (luxPercent > 60) lux.BackgroundColor = Color.FromHex("#c2ac11");
+                if (luxPercent > 45) lux.BackgroundColor = Color.FromHex("#fcdf03");
+                if (luxPercent > 25) lux.BackgroundColor = Color.FromHex("#736b32");
+                else lux.BackgroundColor = Color.FromHex("#45422d");
+            });*/
+        }
+
+        private void HandleHistoryTest()
+        {
+            //X367+T25.24X367+H38.92X367+P102479.67
+            var testInput = new List<string>()
+            {
+                "X367+T15.24",
+                "X367+H38.92",
+                "X367+P102479.67",
+                "X3600+T18.24",
+                "X3600+H48.92",
+                "X3600+P102600",
+                "X36000+T25.24",
+                "X36000+H58.92",
+                "X36000+P102650",
+                "X360000+T5.24",
+                "X360000+H30",
+                "X360000+P103000",
+            };
+
+
+            for (int x = 0; x < 3; x++)
+            {
+
+                var value = testInput[x].Substring(1);
+                var parts = value.Split('+');
+                var key = Double.Parse(parts[0]);
+                WeatherModel wm;
+                if (!WeatherDictionary.TryGetValue(key, out wm))
+                {
+                    // this key (timestasmp) does not yet exist 
+                    WeatherDictionary.Add(key, new WeatherModel() { RelativeTimeStamp = key });
+                }
+                else
+                {
+                    // this key exists.
+                    if (!EntryIsComplete(key))
+                    {
+                        AddToDictionary(key, parts[1]);
+                    }
+
+                    else
+                    {
+                        Device.BeginInvokeOnMainThread(() =>
+                        {
+                            WeatherViewModel.AddToData(WeatherDictionary[key]);
+                        });
+                    }
+                }
+            }
+        }
+        internal bool EntryIsComplete(double key)
+        {
+            return (WeatherDictionary[key].TempValue != 0 && WeatherDictionary[key].PressureValue != 0 && WeatherDictionary[key].PressureValue != 0);
+        }
+
+        private void HandleHistory(CharacteristicUpdatedEventArgs args)
+        {
+            //HandleHistoryTest();
+            //X367+T25.24X367+H38.92X367+P102479.67
+            var value = args.Characteristic.StringValue.Substring(1);
+            var parts = value.Split('+');
+            var key = Double.Parse(parts[0]);
+            WeatherModel wm;
+            if (!WeatherDictionary.TryGetValue(key, out wm))
+            {
+                // this key (timestasmp) does not yet exist 
+                WeatherDictionary.Add(key, new WeatherModel() { RelativeTimeStamp = key });
+            }
+            else
+            {
+                // this key exists.
+                if (!EntryIsComplete(key))
+                {
+                    AddToDictionary(key, parts[1]);
+                }
+
+                else
+                {
+                    Device.BeginInvokeOnMainThread(() =>
+                    {
+                        WeatherViewModel.AddToData(WeatherDictionary[key]);
+                    });
+                }
+            }
+        }
+
+        private void HandleBattery(CharacteristicUpdatedEventArgs args)
+        {
+            var batteryAsString = args.Characteristic.StringValue.Substring(1);
+            var battVolts = float.Parse(batteryAsString);
+            var batteryMax = 4.2;
+            var batteryMin = 3.3;
+
+            // (input-min)/0.9 * 100
+            var voltsAsPercent = (battVolts - batteryMin) / (batteryMax - batteryMin) * 100;
+            Device.BeginInvokeOnMainThread(() =>
+            {
+                lblBatteryPercent.Text = $"{battVolts}v ({voltsAsPercent:0}%)";
+                battery.Value = voltsAsPercent;// $"{battVolts:0.0} volts";
+                if (voltsAsPercent <= 10) battery.Color = Color.FromHex("#ff0000");
+                else if (voltsAsPercent <= 20) battery.Color = Color.FromHex("#ffa500");
+                else if (voltsAsPercent <= 30) battery.Color = Color.FromHex("#dddd00");
+                else battery.Color = Color.FromHex("#008000");
+            });
+        }
+
+        private void HandleHumidity(CharacteristicUpdatedEventArgs args)
+        {
+            var humidityAsString = args.Characteristic.StringValue.Substring(1);
+            var humidity = float.Parse(humidityAsString);
+            Device.BeginInvokeOnMainThread(() =>
+            {
+                humidityHeader.Text = $"{humidity:0.0}%";
+                humidityNeedle.Value = humidity;
+            });
         }
 
         private void HandleTemperature(string tempCAsString, bool changeUnits)
@@ -213,12 +308,99 @@ namespace SenseWeather
                 pressureHeaderhPa.Text = $"{pressureInhPa:0.0}";
                 pressureNeedle.Value = pressureInmmHg;
             });
+        }
 
+        private async Task AskForHistory(bool initialLoad)
+        {
+            //only update history if it's been more than 15 minutes since
+            //last check. station updates every hour, so this is some
+            //arbitrary limit to reduce BLE traffic and power usage....theoretically
+            if (initialLoad || DateTimeOffset.Now >= lastHistoryCheck.AddMinutes(15))
+            {
+                await checkDeviceSettings();
+
+                if (charSend != null)
+                {
+                    btnRefresh.IsEnabled = false;
+                    try
+                    {
+                        byte[] senddata = Encoding.UTF8.GetBytes("X");
+                        await charSend.WriteAsync(senddata);
+                    }
+                    catch
+                    {
+
+                    }
+                    finally
+                    {
+                        btnRefresh.IsEnabled = true;
+                    }
+                }
+            }
         }
 
         private async Task AskForData(bool OkToRetry = true)
         {
-            btnRefresh.IsEnabled = false;
+            await checkDeviceSettings();
+
+            if (charSend != null)
+            {
+                btnRefresh.IsEnabled = false;
+                try
+                {
+                    byte[] senddata = Encoding.UTF8.GetBytes("A");
+                    await charSend.WriteAsync(senddata);
+                    /*if (x)
+                    {
+                        senddata = Encoding.UTF8.GetBytes("T");
+                        var t = await charSend.WriteAsync(senddata);
+                        if (t)
+                        {
+                            senddata = Encoding.UTF8.GetBytes("P");
+                            var p = await charSend.WriteAsync(senddata);
+                            if (p)
+                            {
+                                senddata = Encoding.UTF8.GetBytes("H");
+                                var h = await charSend.WriteAsync(senddata);
+                                if (h)
+                                {
+                                    senddata = Encoding.UTF8.GetBytes("B");
+                                    await charSend.WriteAsync(senddata);
+                                }
+                            }
+                        }
+                    }*/
+
+                }
+                catch (Exception ex)
+                {
+                    if (ex.GetType() == typeof(CharacteristicReadException) && OkToRetry)
+                    {
+                        await GetStarted();
+                        await AskForData(false);
+                    }
+                    else
+                    {
+                        await DisplayAlert("Error", ex.ToString(), "Wuh? That's a bummer.");
+                    }
+                }
+                finally
+                {
+                    btnRefresh.IsEnabled = true;
+                }
+            }
+            else
+            {
+                await SetupWeatherService();
+                //await AskForData(); DNAGERLOOP
+            }
+            currentTime.Text = $"{DateTime.Now.ToShortTimeString()}";
+            currentDate.Text = $"{DateTime.Now.ToShortDateString()}";
+            btnRefresh.IsEnabled = true;
+        }
+
+        private async Task checkDeviceSettings()
+        {
             if (_device == null)
             {
                 if (BleDevice.WeatherStationDevice == null)
@@ -227,7 +409,7 @@ namespace SenseWeather
                 }
 
                 _device = BleDevice.WeatherStationDevice;
-                charSend = await weatherService.GetCharacteristicAsync(GattConstants.UartRxCharacteristic);
+
 
                 if (_device == null)
                 {
@@ -242,63 +424,39 @@ namespace SenseWeather
                 }
                 return;
             }
-
-            if (charSend != null)
-            {
-                try
-                {
-                    await AskForTemp();
-                    await AskForPressure();
-                    byte[] senddata = Encoding.UTF8.GetBytes("H");
-                    await charSend.WriteAsync(senddata);
-                    senddata = Encoding.UTF8.GetBytes("B");
-                    await charSend.WriteAsync(senddata);
-                    senddata = Encoding.UTF8.GetBytes("L");
-                    await charSend.WriteAsync(senddata);
-                    senddata = Encoding.UTF8.GetBytes("X");
-                    await charSend.WriteAsync(senddata);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.GetType() == typeof(CharacteristicReadException) && OkToRetry)
-                    {
-                        await AskForData(false);
-                    }
-                    else
-                    {
-                        await DisplayAlert("Error", ex.ToString(), "Wuh? That's a pisser.");
-                    }
-                }
-                finally
-                {
-                    btnRefresh.IsEnabled = true;
-                }
-            }
-            else
-            {
-                await SetupWeatherService();
-            }
-            currentTime.Text = $"{DateTime.Now.ToShortTimeString()}";
-            currentDate.Text = $"{DateTime.Now.ToShortDateString()}";
-            btnRefresh.IsEnabled = true;
-        }
-
-        private async Task AskForTemp()
-        {
-            charSend = await weatherService.GetCharacteristicAsync(GattConstants.UartRxCharacteristic);
-            byte[] senddata = Encoding.UTF8.GetBytes("t");
-            await charSend.WriteAsync(senddata);
-        }
-        private async Task AskForPressure()
-        {
-            charSend = await weatherService.GetCharacteristicAsync(GattConstants.UartRxCharacteristic);
-            byte[] senddata = Encoding.UTF8.GetBytes("p");
-            await charSend.WriteAsync(senddata);
         }
 
         private async void RefreshButton_Clicked(object sender, EventArgs e)
         {
             await AskForData();
+            //TODO: set back to false
+            await AskForHistory(false);
+        }
+
+
+        internal void AddToDictionary(double key, string input)
+        {
+            try
+            {
+                var item = WeatherDictionary[key];
+                switch (input[0])
+                {
+                    case 'T':
+                        if (item.TempValue == 0) item.TempValue = Double.Parse(input.Substring(1));
+                        break;
+                    case 'P':
+
+                        if (item.PressureValue == 0) item.PressureValue = Double.Parse(input.Substring(1));
+                        break;
+                    case 'H':
+                        if (item.HumidityValue == 0) item.HumidityValue = Double.Parse(input.Substring(1));
+                        break;
+                }
+            }
+            catch (Exception feck)
+            {
+                DisplayAlert("error", $"Error handling the historic data.\n{feck}", "Drat.");
+            }
         }
     }
 }

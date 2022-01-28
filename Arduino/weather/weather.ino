@@ -1,16 +1,3 @@
-/*********************************************************************
- This is an example for our nRF52 based Bluefruit LE modules
-
- Pick one up today in the adafruit shop!
-
- Adafruit invests time and resources providing this open source code,
- please support Adafruit and open-source hardware by purchasing
- products from Adafruit!
-
- MIT license, check LICENSE for more information
- All text above, and the splash screen below must be included in
- any redistribution
-*********************************************************************/
 #include <bluefruit.h>
 #include <Adafruit_LittleFS.h>
 #include <InternalFileSystem.h>
@@ -31,9 +18,6 @@ BLEDfu bledfu;   // OTA DFU service
 BLEDis bledis;   // device information
 BLEUart bleuart; // uart over ble
 BLEBas blebas;   // battery
-
-// **************//
-//https://learn.adafruit.com/adafruit-feather-sense/arduino-sensor-example//
 
 Adafruit_APDS9960 apds9960; // proximity, light, color, gesture
 Adafruit_BMP280 bmp280;     // temperautre, barometric pressure
@@ -156,7 +140,16 @@ void loop()
   {
     uint8_t ch;
     ch = (uint8_t)bleuart.read();
-    // ************************ GET HISTORY **********************************
+    // **************************** SEND ALL RECENT DATA *****************************    
+    if (ch == 65 || ch == 97) //"a" or "A"
+    {
+      getLatestData();
+      sendTemperature();
+      sendPressure();
+      sendHumidity();
+      sendBattery();
+    }
+    // ************************ SEND HISTORY **********************************
     if (ch == 88 || ch == 120) //"x" or "X"
     {
       for (int x = logPointer; x < maxLogCount + logPointer; x++)
@@ -168,74 +161,46 @@ void loop()
         while (str.length() > 0)
         {
           int index = str.indexOf('X');
-          if (index == -1) // No X found
+          if (index == -1) // No X found (probably the last substring)
           {
-            strs[StringCount++] = str;
+            strs[StringCount++] = "X" + str;
             break;
           }
           else
           {
-            strs[StringCount++] = str.substring(0, index);
+            strs[StringCount++] = "X" + str.substring(0, index);
             str = str.substring(index + 1);
           }
         }
         for (int i = 0; i < StringCount; i++)
         {
-          Serial.print(i);
-          Serial.print(": \"");
-          Serial.print(strs[i]);
           bleuart.print(strs[i]);
-          Serial.println("\"");
+          Serial.print(strs[i]);
         }
       }
     }
-    // ************************ GET TEMPERATURE **********************************
+    // ************************ SEND TEMPERATURE **********************************
     else if (ch == 116 || ch == 84)
     { //"t" or "T"
-      char tBuf[9];
-      dtostrf(temperature, 4, 2, tBuf);
-      char charBuf[15];
-      strcpy(charBuf, "T");
-      strcpy(charBuf + 1, tBuf);
-      bleuart.write(charBuf);
-      Serial.println(charBuf);
+      getLatestData();
+      sendTemperature();
     }
-    // ************************ GET PRESSURE **********************************
+    // ************************ SEND PRESSURE **********************************
     else if (ch == 112 || ch == 80)
     { //"p" or "P"
-      char pBuf[9];
-      dtostrf(pressure, 4, 2, pBuf);
-      char charBuf[15];
-      strcpy(charBuf, "P");
-      strcpy(charBuf + 1, pBuf);
-      bleuart.write(charBuf);
-      Serial.println(charBuf);
+      getLatestData();
+      sendPressure();
     }
-    // ************************ GET HUMIDITY **********************************
+    // ************************ SEND HUMIDITY **********************************
     else if (ch == 104 || ch == 72)
     { //"h" or "H"
-      char hBuf[9];
-      dtostrf(humidity, 4, 2, hBuf);
-      char charBuf[15];
-      strcpy(charBuf, "H");
-      strcpy(charBuf + 1, hBuf);
-      bleuart.write(charBuf);
-      Serial.println(charBuf);
+      getLatestData();
+      sendHumidity();
     }
-    // ************************ GET BATTERY **********************************
+    // ************************ SEND BATTERY **********************************
     else if (ch == 66 || ch == 98)
     { //"b" or "B"
-      float measuredvbat = analogRead(VBATPIN);
-      measuredvbat *= 2;
-      measuredvbat *= 3.6;  // Multiply by 3.6V, our reference voltage
-      measuredvbat /= 1024; // convert to voltage
-      char bBuf[9];
-      dtostrf(measuredvbat, 4, 2, bBuf);
-      char charBuf[6];
-      strcpy(charBuf, "B");
-      strcpy(charBuf + 1, bBuf);
-      bleuart.write(charBuf);
-      Serial.println(charBuf);
+      sendBattery();
     }
     // ************************ GET LUX **********************************
     else if (ch == 76 || ch == 108) //"l" or "L"
@@ -257,6 +222,49 @@ void loop()
 }
 // *** END LOOP ***********************************************************
 
+void sendTemperature(){
+  char tBuf[9];
+  dtostrf(temperature, 4, 2, tBuf);
+  char charBuf[15];
+  strcpy(charBuf, "T");
+  strcpy(charBuf + 1, tBuf);
+  bleuart.write(charBuf);
+  Serial.println(charBuf);
+}
+
+void sendPressure(){
+  char pBuf[9];
+  dtostrf(pressure, 4, 2, pBuf);
+  char charBuf[15];
+  strcpy(charBuf, "P");
+  strcpy(charBuf + 1, pBuf);
+  bleuart.write(charBuf);
+  Serial.println(charBuf);
+}
+
+void sendHumidity(){
+  char hBuf[9];
+  dtostrf(humidity, 4, 2, hBuf);
+  char charBuf[15];
+  strcpy(charBuf, "H");
+  strcpy(charBuf + 1, hBuf);
+  bleuart.write(charBuf);
+  Serial.println(charBuf);
+}
+
+void sendBattery(){
+  float measuredvbat = analogRead(VBATPIN);
+  measuredvbat *= 2;
+  measuredvbat *= 3.6;  // Multiply by 3.6V, our reference voltage
+  measuredvbat /= 1024; // convert to voltage
+  char bBuf[9];
+  dtostrf(measuredvbat, 4, 2, bBuf);
+  char charBuf[6];
+  strcpy(charBuf, "B");
+  strcpy(charBuf + 1, bBuf);
+  bleuart.write(charBuf);
+  Serial.println(charBuf);
+}
 void WriteToBuffer()
 {
   unsigned long mil = millis();
@@ -273,35 +281,15 @@ void getLatestData()
   Serial.println("Getting latest sensor data");
   temperature = bmp280.readTemperature();
   pressure = bmp280.readPressure();
-  //altitude = bmp280.readAltitude(1013.25);
   humidity = sht30.readHumidity();
 
-  //lis3mdl.read();
-  //magnetic_x = lis3mdl.x;
-  //magnetic_y = lis3mdl.y;
-  //magnetic_z = lis3mdl.z;
-
-  //sensors_event_t accel;
-  //sensors_event_t gyro;
-  //sensors_event_t temp;
-  //lsm6ds33.getEvent(&accel, &gyro, &temp);
-  //accel_x = accel.acceleration.x;
-  //accel_y = accel.acceleration.y;
-  //accel_z = accel.acceleration.z;
-  //gyro_x = gyro.gyro.x;
-  //gyro_y = gyro.gyro.y;
-  //gyro_z = gyro.gyro.z;
-
-  //samplesRead = 0;
-  //mic = getPDMwave(4000);
-
-  //proximity = apds9960.readProximity();
   while (!apds9960.colorDataReady())
   {
     delay(5);
   }
   apds9960.getColorData(&r, &g, &b, &c);
 }
+
 // callback invoked when central connects
 void connect_callback(uint16_t conn_handle)
 {

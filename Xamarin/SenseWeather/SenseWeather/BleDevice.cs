@@ -12,6 +12,7 @@ namespace SenseWeather
         private static IAdapter _bluetoothAdapter;
         public static IDevice WeatherStationDevice;
         private static Guid weatherStationGuid = Guid.Parse("00000000-0000-0000-0000-de02576ef3b7");
+        internal static ConnectParameters _connectParameters = new ConnectParameters(autoConnect: true, forceBleTransport: true);
 
         static BleDevice()
         {
@@ -57,7 +58,7 @@ namespace SenseWeather
                 return null;
             }*/
 
-            var device = await _bluetoothAdapter.ConnectToKnownDeviceAsync(weatherStationGuid);
+            var device = await _bluetoothAdapter.ConnectToKnownDeviceAsync(weatherStationGuid, _connectParameters);
             if (device != null && device.State == DeviceState.Connected)
             {
                 WeatherStationDevice = device;
@@ -67,7 +68,7 @@ namespace SenseWeather
             {
                 try
                 {
-                    await _bluetoothAdapter.ConnectToKnownDeviceAsync(weatherStationGuid);
+                    await _bluetoothAdapter.ConnectToKnownDeviceAsync(weatherStationGuid, _connectParameters);
                     if (device.State != DeviceState.Connected)
                     {
                         //TODO error!!

@@ -10,12 +10,9 @@
              mc:Ignorable="d"
              Title="Woodsong Weather"
              Visual="Material"
-             x:Class="SenseWeather.MainPage">
-    <ContentPage.BindingContext>
-        <local:WeatherViewModel/>
-    </ContentPage.BindingContext>
+             x:Class="SenseWeather.MainPage"
+             BindingContext="SenseWeather.Models.WeatherViewModel">
     <ContentPage.Content>
-
         <Grid BackgroundColor="#d3dece">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
@@ -127,6 +124,7 @@
                     <gauge:Scale x:Name="pressureScalemmHg" StartValue="650" EndValue="813"
                                  UseRangeColorForLabels="False" LabelFontSize="8"
                                  LabelOffset="0.6" ScaleStartOffset="0.7" ScaleEndOffset="0.69"
+                                 LabelColor="#443585"
                                  >
                         <gauge:Scale.Ranges>
                             <gauge:Range x:Name="pressureRangemmHg" StartValue="650" EndValue="820" Color="Transparent" />
@@ -183,8 +181,7 @@
                   VerticalTextAlignment="Center" Padding="0,-18,10,0"
                     TextColor="#223322" />
 
-            <gauge:SfLinearGauge HeightRequest="20" Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
-                                     >
+            <gauge:SfLinearGauge HeightRequest="20" Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2">
                 <gauge:SfLinearGauge.Scales>
                     <gauge:LinearScale
                             Offset="-10"
@@ -221,28 +218,56 @@
             </Frame>-->
 
             <!-- historic chart-->
+            <!--<Frame Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" 
+                   IsVisible="True" BackgroundColor="White" >
+                <ListView ItemsSource="{Binding Source={x:Static local:WeatherViewModel.Data}}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <TextCell Text="{Binding TempValue}" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Frame>-->
             <Frame Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" 
                    IsVisible="True" BackgroundColor="Transparent" >
                 <graph:SfChart x:Name="Chart" HorizontalOptions="FillAndExpand"
-                       VerticalOptions="FillAndExpand">
+                       VerticalOptions="FillAndExpand" ChartPadding="-20,0,18,5"
+                               BackgroundColor="#e4efdf"
+                               AreaBorderWidth="1">
                     <graph:SfChart.ChartBehaviors>
                         <graph:ChartTooltipBehavior BackgroundColor="#404041" />
                         <graph:ChartZoomPanBehavior EnablePanning="True" EnableZooming="True"/>
+
                     </graph:SfChart.ChartBehaviors>
                     <graph:SfChart.PrimaryAxis>
-                        <graph:NumericalAxis Interval="2"/>
-                    </graph:SfChart.PrimaryAxis>
-                    <graph:SfChart.SecondaryAxis>
-                        <graph:NumericalAxis Interval="2" Maximum="10" Minimum="0">
+                        <graph:NumericalAxis Minimum="0">
+                            <graph:NumericalAxis.Title>
+                                <graph:ChartAxisTitle Text="History&#x0a;(time &#x279F;)" FontSize="10" Margin="0,0,0,0"/>
+                            </graph:NumericalAxis.Title>
                             <graph:NumericalAxis.AxisLineStyle>
-                                <graph:ChartLineStyle StrokeWidth="1">
+                                <graph:ChartLineStyle StrokeWidth="0">
                                 </graph:ChartLineStyle>
                             </graph:NumericalAxis.AxisLineStyle>
                             <graph:NumericalAxis.MajorTickStyle>
                                 <graph:ChartAxisTickStyle TickSize="1" />
                             </graph:NumericalAxis.MajorTickStyle>
                             <graph:NumericalAxis.LabelStyle>
-                                <graph:ChartAxisLabelStyle x:Name="secondaryAxisLabelStyle"/>
+                                <graph:ChartAxisLabelStyle  FontSize="0.01" x:Name="primaryAxisLabelStyle"/>
+                            </graph:NumericalAxis.LabelStyle>
+                        </graph:NumericalAxis>
+                    </graph:SfChart.PrimaryAxis>
+                    <graph:SfChart.SecondaryAxis>
+                        <graph:NumericalAxis Minimum="0"
+                                             Maximum="100">
+                            <graph:NumericalAxis.AxisLineStyle>
+                                <graph:ChartLineStyle StrokeWidth="0" >
+                                </graph:ChartLineStyle>
+                            </graph:NumericalAxis.AxisLineStyle>
+                            <graph:NumericalAxis.MajorTickStyle>
+                                <graph:ChartAxisTickStyle TickSize="1" />
+                            </graph:NumericalAxis.MajorTickStyle>
+                            <graph:NumericalAxis.LabelStyle>
+                                <graph:ChartAxisLabelStyle FontSize="0.01" x:Name="secondaryAxisLabelStyle"/>
                             </graph:NumericalAxis.LabelStyle>
                         </graph:NumericalAxis>
                     </graph:SfChart.SecondaryAxis>
@@ -250,92 +275,84 @@
                         <graph:ChartColorModel Palette="Natural" />
                     </graph:SfChart.ColorModel>
                     <graph:SfChart.Series>
-                        <graph:LineSeries
+                        <graph:StepLineSeries
                             x:Name="splineSeries1"
-                            ItemsSource="{Binding Data}"
+                            ItemsSource="{Binding Source={x:Static local:WeatherViewModel.Data}}"
                             XBindingPath="RelativeTimeStamp"
                             YBindingPath="TempValue"
-                           
                             StrokeWidth="2"
                             Color="#dd0000"
                             EnableTooltip="false">
 
-                            <graph:LineSeries.DataMarker>
+                            <graph:StepLineSeries.DataMarker>
                                 <graph:ChartDataMarker>
                                     <graph:ChartDataMarker.LabelTemplate>
                                         <DataTemplate>
                                             <border:SfBorder 
-                                            HeightRequest="5" 
-                                            CornerRadius="20" 
-                                            WidthRequest="4" 
-                                            BorderColor="#dd0000" 
-                                            BorderWidth="5" 
-                                            BackgroundColor="WhiteSmoke"/>
+                                            HeightRequest="3" 
+                                            CornerRadius="3" 
+                                            WidthRequest="3" 
+                                            BorderColor="#dd0000" />
                                         </DataTemplate>
                                     </graph:ChartDataMarker.LabelTemplate>
                                     <graph:ChartDataMarker.LabelStyle>
                                         <graph:DataMarkerLabelStyle LabelPosition="Center"/>
                                     </graph:ChartDataMarker.LabelStyle>
                                 </graph:ChartDataMarker>
-                            </graph:LineSeries.DataMarker>
-                        </graph:LineSeries>
+                            </graph:StepLineSeries.DataMarker>
+                        </graph:StepLineSeries>
 
-                        <graph:LineSeries
+                        <graph:StepLineSeries
                             x:Name="splineSeries2"
-                            ItemsSource="{Binding Data}"
+                            ItemsSource="{Binding Source={x:Static local:WeatherViewModel.Data}}"
                             XBindingPath="RelativeTimeStamp"
                             YBindingPath="HumidityValue"
-                            Color="#FF9370DB"
+                            Color="#afcc34"
                             StrokeWidth="2" EnableTooltip="false">
-
-                            <graph:LineSeries.DataMarker>
+                            <graph:StepLineSeries.DataMarker>
                                 <graph:ChartDataMarker x:Name="dataMarker2">
                                     <graph:ChartDataMarker.LabelTemplate>
                                         <DataTemplate>
                                             <border:SfBorder 
-                                            HeightRequest="5" 
-                                            CornerRadius="20" 
-                                            WidthRequest="4" 
-                                            BorderColor="#FF9370DB"
-                                            BorderWidth="5" 
-                                            BackgroundColor="WhiteSmoke"/>
+                                            HeightRequest="3" 
+                                            CornerRadius="0" 
+                                            WidthRequest="3"
+                                            BorderColor="#afcc34"
+                                            BorderWidth="5" />
                                         </DataTemplate>
                                     </graph:ChartDataMarker.LabelTemplate>
                                     <graph:ChartDataMarker.LabelStyle>
                                         <graph:DataMarkerLabelStyle LabelPosition="Center"/>
                                     </graph:ChartDataMarker.LabelStyle>
                                 </graph:ChartDataMarker>
-                            </graph:LineSeries.DataMarker>
-                        </graph:LineSeries>
-
-
-                        <graph:LineSeries
+                            </graph:StepLineSeries.DataMarker>
+                        </graph:StepLineSeries>
+                        <graph:StepLineSeries
                             x:Name="splineSeries3"
-                            ItemsSource="{Binding Data}"
+                            ItemsSource="{Binding Source={x:Static local:WeatherViewModel.Data}}"
                             XBindingPath="RelativeTimeStamp"
                             YBindingPath="PressureValue"
                             StrokeWidth="2"
-                            Color="#afcc34"
+                            Color="#FF9370DB"
                             EnableTooltip="false">
-                            <graph:LineSeries.DataMarker>
+                            <graph:StepLineSeries.DataMarker>
                                 <graph:ChartDataMarker x:Name="dataMarker3">
                                     <graph:ChartDataMarker.LabelTemplate>
                                         <DataTemplate>
                                             <border:SfBorder 
-                                            HeightRequest="5" 
-                                            CornerRadius="20" 
-                                            WidthRequest="4" 
-                                            BorderColor="#afcc34" 
-                                            BorderWidth="5" 
-                                            BackgroundColor="WhiteSmoke"/>
+                                           HeightRequest="3" 
+                                            CornerRadius="0" 
+                                            WidthRequest="3"
+                                            BorderColor="#FF9370DB" 
+                                            BorderWidth="5" />
                                         </DataTemplate>
                                     </graph:ChartDataMarker.LabelTemplate>
                                     <graph:ChartDataMarker.LabelStyle>
-                                        <graph:DataMarkerLabelStyle LabelPosition="Outer"/>
+                                        <graph:DataMarkerLabelStyle LabelPosition="Center"/>
                                     </graph:ChartDataMarker.LabelStyle>
                                 </graph:ChartDataMarker>
-                            </graph:LineSeries.DataMarker>
-                        </graph:LineSeries>
+                            </graph:StepLineSeries.DataMarker>
+                        </graph:StepLineSeries>
                     </graph:SfChart.Series>
                 </graph:SfChart>
 
