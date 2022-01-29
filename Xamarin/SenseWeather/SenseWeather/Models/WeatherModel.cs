@@ -31,8 +31,6 @@ namespace SenseWeather.Models
                 return false;
             }
         }
-
-
     }
 
     public class WeatherViewModel
@@ -63,8 +61,7 @@ namespace SenseWeather.Models
             int minTempValue = -20;
             int maxTempValue = 120;
 
-            //(input - min) / (mAx-MIN) * 100;
-
+            // (input - min) / (max-min) * 100;
             return new WeatherModel()
             {
                 TempValue = (input.TempValue - minTempValue) / (maxTempValue - minTempValue) * 100,

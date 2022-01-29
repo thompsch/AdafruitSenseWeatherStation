@@ -67,8 +67,8 @@ namespace SenseWeather
             }
 
             await SetupWeatherService();
-            await AskForData();
             await AskForHistory(true);
+            await AskForData();
 
         }
 
@@ -118,7 +118,7 @@ namespace SenseWeather
                                 }
                             case 76: //LUX
                                 {
-                                    HandleLux(args);
+                                    //HandleLux(args);
                                     break;
                                 }
                             case 88: //History
@@ -133,9 +133,6 @@ namespace SenseWeather
                                 }
                         }
                     };
-
-
-                    // charSend = await weatherService.GetCharacteristicAsync(GattConstants.UartRxCharacteristic);
                 }
                 else
                 {
@@ -152,46 +149,31 @@ namespace SenseWeather
             }
         }
 
-        private static void HandleLux(CharacteristicUpdatedEventArgs args)
-        {
-            /*var luxValueAsString = args.Characteristic.StringValue.Substring(1);
-            var luxValue = Int16.Parse(luxValueAsString);
-            //value maxes at 4097, but realistic daylight is...~200
-            var luxPercent = (float)(luxValue / 2);
-            Device.BeginInvokeOnMainThread(() =>
-            {
-                lux.Text = $"{luxPercent}%";
-                if (luxPercent > 85) lux.BackgroundColor = Color.FromHex("#fff100");
-                if (luxPercent > 60) lux.BackgroundColor = Color.FromHex("#c2ac11");
-                if (luxPercent > 45) lux.BackgroundColor = Color.FromHex("#fcdf03");
-                if (luxPercent > 25) lux.BackgroundColor = Color.FromHex("#736b32");
-                else lux.BackgroundColor = Color.FromHex("#45422d");
-            });*/
-        }
-
-        private void HandleHistoryTest()
+        private async Task HandleHistoryTest()
         {
             //X367+T25.24X367+H38.92X367+P102479.67
             var testInput = new List<string>()
             {
-                "X367+T15.24",
-                "X367+H38.92",
-                "X367+P102479.67",
-                "X3600+T18.24",
-                "X3600+H48.92",
-                "X3600+P102600",
-                "X36000+T25.24",
-                "X36000+H58.92",
-                "X36000+P102650",
-                "X360000+T5.24",
-                "X360000+H30",
-                "X360000+P103000",
+                "X360+T15.24",
+                "X360+H38.92",
+                "X360+P102479.67",
+                "X3600360+T18.24",
+                "X3600360+H48.92",
+                "X3600360+P102600",
+                "X7200360+T25.24",
+                "X7200360+H58.92",
+                "X7200360+P102650",
+                "X10800360+T22.24",
+                "X10800360+H55.92",
+                "X10800360+P101150",
+                "X14400360+T5.24",
+                "X14400360+H30",
+                "X14400360+P103000",
             };
 
 
             foreach (var ti in testInput)
             {
-
                 var value = ti.Substring(1);
                 var parts = value.Split('+');
                 var key = Double.Parse(parts[0]);
@@ -201,41 +183,52 @@ namespace SenseWeather
                     // this key (timestasmp) does not yet exist 
                     WeatherDictionary.Add(key, new WeatherModel() { RelativeTimeStamp = key });
                 }
+                // this key exists.
+
+                if (EntryIsComplete(key))
+                {
+                    UpdateChart(key);
+                }
                 else
                 {
-                    // this key exists.
-                    if (!EntryIsComplete(key))
+                    AddToDictionary(key, parts[1]);
+                    if (EntryIsComplete(key))
                     {
-                        AddToDictionary(key, parts[1]);
-                    }
-
-                    else
-                    {
-                        Device.BeginInvokeOnMainThread(() =>
-                        {
-                            WeatherViewModel.AddToData(WeatherDictionary[key]);
-
-                            NumericalStripLine stripLine = new NumericalStripLine()
-                            {
-                                Start = key,
-                                Width = 2,
-                                StrokeColor = Color.FromHex("#232323")
-                            };
-                            primaryNumericalAxis.StripLines.Add(stripLine);
-                        });
+                        UpdateChart(key);
                     }
                 }
             }
         }
+
+        internal void UpdateChart(double key)
+        {
+            Device.BeginInvokeOnMainThread(() =>
+            {
+                WeatherViewModel.AddToData(WeatherDictionary[key]);
+                NumericalStripLine stripLine = new NumericalStripLine()
+                {
+                    Start = key,
+                    Width = 2,
+                    StrokeColor = Color.FromHex("#232323")
+                };
+                primaryNumericalAxis.StripLines.Add(stripLine);
+
+            });
+        }
+
         internal bool EntryIsComplete(double key)
         {
-            return (WeatherDictionary[key].TempValue != 0 && WeatherDictionary[key].PressureValue != 0 && WeatherDictionary[key].PressureValue != 0);
+            return (
+                WeatherDictionary[key].TempValue != 0 &&
+                WeatherDictionary[key].PressureValue != 0 &&
+                WeatherDictionary[key].HumidityValue != 0);
         }
 
         private void HandleHistory(CharacteristicUpdatedEventArgs args)
         {
             //X367+T25.24X367+H38.92X367+P102479.67
             var value = args.Characteristic.StringValue.Substring(1);
+
             var parts = value.Split('+');
             var key = Double.Parse(parts[0]);
             WeatherModel wm;
@@ -244,20 +237,18 @@ namespace SenseWeather
                 // this key (timestasmp) does not yet exist 
                 WeatherDictionary.Add(key, new WeatherModel() { RelativeTimeStamp = key });
             }
+            // this key exists.
+
+            if (EntryIsComplete(key))
+            {
+                UpdateChart(key);
+            }
             else
             {
-                // this key exists.
-                if (!EntryIsComplete(key))
+                AddToDictionary(key, parts[1]);
+                if (EntryIsComplete(key))
                 {
-                    AddToDictionary(key, parts[1]);
-                }
-
-                else
-                {
-                    Device.BeginInvokeOnMainThread(() =>
-                    {
-                        WeatherViewModel.AddToData(WeatherDictionary[key]);
-                    });
+                    UpdateChart(key);
                 }
             }
         }
@@ -320,7 +311,7 @@ namespace SenseWeather
 
         private async Task AskForHistory(bool initialLoad)
         {
-            //HandleHistoryTest();
+            // await HandleHistoryTest();
             //only update history if it's been more than 15 minutes since
             //last check. station updates every hour, so this is some
             //arbitrary limit to reduce BLE traffic and power usage....theoretically
@@ -468,9 +459,5 @@ namespace SenseWeather
             }
         }
 
-        async void History_Tapped(System.Object sender, System.EventArgs e)
-        {
-            await AskForHistory(true);
-        }
     }
 }
