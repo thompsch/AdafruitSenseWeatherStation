@@ -29,7 +29,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- DateTime -->
-            <Label HorizontalTextAlignment="Start" Padding="20,10,0,14" Grid.Row="4" Grid.Column="0"  x:Name="currentDateTime"
+            <Label HorizontalTextAlignment="Start" Padding="20,25,0,14" Grid.Row="4" Grid.Column="0"  x:Name="currentDateTime"
                    TextColor="#343467" FontSize="16"
                    Text="now&#x0a;now" HorizontalOptions="StartAndExpand" VerticalOptions="Center"/>
 
@@ -90,7 +90,7 @@
                 <gauge:SfCircularGauge.Scales>
                     <gauge:Scale StartValue="0" EndValue="100"
                                  UseRangeColorForLabels="False" LabelFontSize="12"
-                                 RimColor="#afcc34" FontAttributes="Bold"
+                                 RimColor="#8bc95f" FontAttributes="Bold"
                                  LabelOffset=".85"
                                  ScaleStartOffset="0.65" ScaleEndOffset="0.68">
                         <gauge:Scale.Ranges>
@@ -98,13 +98,13 @@
                             <gauge:Range  StartValue="0" EndValue="100" Color="Transparent"/>
                         </gauge:Scale.Ranges>
                         <gauge:Scale.Pointers>
-                            <gauge:NeedlePointer KnobRadius="5" KnobStrokeColor="#8daa12" KnobColor="#9ebb23"
-                                                 Color="#afcc34" x:Name="humidityNeedle"
+                            <gauge:NeedlePointer KnobRadius="5" KnobStrokeColor="#76ad50" KnobColor="#76ad50"
+                                                 Color="#8bc95f" x:Name="humidityNeedle"
                                                  LengthFactor="0.6"/>
                         </gauge:Scale.Pointers>
                         <gauge:Scale.MajorTickSettings>
                             <gauge:TickSettings Thickness="1" Length="18" StartOffset="0.75" EndOffset="0.56"
-                                                Color="#8daa12" />
+                                                Color="#5e8a3f" />
                         </gauge:Scale.MajorTickSettings>
                         <gauge:Scale.MinorTickSettings>
                             <gauge:TickSettings Thickness="0" Length="10" StartOffset="0.75" EndOffset="0.66"  />
@@ -182,7 +182,7 @@
                    Text="--" FontSize="20" Margin="0,0,0,10" FontAttributes="Bold" VerticalTextAlignment="End"
                    TextColor="Black"/>
                 <Label Grid.Row="0" Grid.Column="1" HorizontalTextAlignment="Start" 
-                   Text="mBar" FontSize="12" Margin="0,0,0,14" VerticalTextAlignment="End"
+                   Text="mbar" FontSize="12" Margin="0,0,0,14" VerticalTextAlignment="End"
                    TextColor="Black"/>
                 <Label x:Name="pressureHeaderhPa" Grid.Row="1" Grid.Column="0" HorizontalTextAlignment="End"
                    Text="--" FontSize="16"  
@@ -204,7 +204,7 @@
                     TextColor="#223322" />
 
             <gauge:SfLinearGauge HeightRequest="10" Grid.Row="4" Grid.Column="3" Grid.ColumnSpan="1"
-                                 HorizontalOptions="End" Margin="0,30,20,10">
+                                 HorizontalOptions="End" Margin="0,30,10,10">
                 <gauge:SfLinearGauge.Scales>
                     <gauge:LinearScale
                             Offset="-10"
@@ -221,7 +221,7 @@
                                     ScaleBarSize="10">
                         <gauge:LinearScale.Pointers>
                             <gauge:BarPointer x:Name="battery"
-                                     Thickness="18"/>
+                                     Thickness="10"/>
                         </gauge:LinearScale.Pointers>
                         <gauge:LinearScale.MajorTickSettings>
                             <gauge:LinearTickSettings Thickness="1" Color ="#979797" Length="12" Offset ="-12" />
@@ -240,7 +240,7 @@
                    Padding="2" Margin="5,-20,5,10" CornerRadius="5" VerticalOptions="Start">
 
                 <graph:SfChart x:Name="Chart" HorizontalOptions="FillAndExpand"
-                       VerticalOptions="FillAndExpand" ChartPadding="0,0,30,0"
+                       VerticalOptions="FillAndExpand" ChartPadding="0,0,30,5"
                                BackgroundColor="#e4efdf"
                                AreaBorderWidth="1">
                     <graph:SfChart.ChartBehaviors>
@@ -281,7 +281,6 @@
                             <graph:NumericalAxis.LabelStyle>
                                 <graph:ChartAxisLabelStyle FontSize="0.01" x:Name="secondaryAxisLabelStyle"/>
                             </graph:NumericalAxis.LabelStyle>
-
                         </graph:NumericalAxis>
                     </graph:SfChart.SecondaryAxis>
                     <graph:SfChart.ColorModel>
@@ -321,7 +320,7 @@
                             ItemsSource="{Binding Source={x:Static local:WeatherViewModel.Data},Mode=OneWay}"
                             XBindingPath="RelativeTimeStamp"
                             YBindingPath="HumidityValue"
-                            Color="#afcc34"
+                            Color="#8bc95f"
                             StrokeWidth="2"
                             EnableTooltip="false"
                             SplineType="Monotonic">
@@ -333,7 +332,7 @@
                                             HeightRequest="3" 
                                             CornerRadius="0" 
                                             WidthRequest="3"
-                                            BorderColor="#afcc34"
+                                            BorderColor="#8bc95f"
                                             BorderWidth="5" />
                                         </DataTemplate>
                                     </graph:ChartDataMarker.LabelTemplate>
@@ -381,7 +380,7 @@
                          HorizontalOptions="Start"
                          VerticalOptions="End"
                          HeightRequest="16"
-                         Margin="20,0,0,26"
+                         Margin="17,0,0,28"
                          >
                 <Frame BackgroundColor="#dd0000" BorderColor="Black"
                        CornerRadius="60" >
@@ -394,7 +393,8 @@
                         />
                 </Frame>
                 <Frame BackgroundColor="#FF9370DB" BorderColor="Black"
-                       CornerRadius="60" >
+                       CornerRadius="60"
+                       Margin="-5,0,0,0">
                     <Label TextColor="White"
                         Text="P"
                         FontSize="12"
@@ -403,8 +403,9 @@
                            VerticalTextAlignment="Center"
                         />
                 </Frame>
-                <Frame BackgroundColor="#afcc34" BorderColor="Black"
-                       CornerRadius="60" >
+                <Frame BackgroundColor="#8bc95f" BorderColor="Black"
+                       CornerRadius="60"
+                       Margin="-5,0,0,0">
                     <Label TextColor="White"
                         Text="H"
                         FontSize="12"

@@ -265,11 +265,11 @@ namespace SenseWeather
             Device.BeginInvokeOnMainThread(() =>
             {
                 lblBatteryPercent.Text = $"{battVolts}v ({voltsAsPercent:0}%)";
-                battery.Value = voltsAsPercent;// $"{battVolts:0.0} volts";
-                if (voltsAsPercent <= 10) battery.Color = Color.FromHex("#ff0000");
-                else if (voltsAsPercent <= 20) battery.Color = Color.FromHex("#ffa500");
-                else if (voltsAsPercent <= 30) battery.Color = Color.FromHex("#dddd00");
-                else battery.Color = Color.FromHex("#008000");
+                battery.Value = voltsAsPercent;
+                if (voltsAsPercent <= 10) battery.Color = Color.FromHex("#c78787");
+                else if (voltsAsPercent <= 20) battery.Color = Color.FromHex("#c9a76b");
+                else if (voltsAsPercent <= 30) battery.Color = Color.FromHex("#e6e691");
+                else battery.Color = Color.FromHex("#8dc98d");
             });
         }
 
