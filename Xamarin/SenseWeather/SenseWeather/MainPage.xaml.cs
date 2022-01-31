@@ -202,13 +202,14 @@ namespace SenseWeather
 
         internal void UpdateChart(double key)
         {
+
             Device.BeginInvokeOnMainThread(() =>
             {
                 WeatherViewModel.AddToData(WeatherDictionary[key]);
                 NumericalStripLine stripLine = new NumericalStripLine()
                 {
                     Start = key,
-                    Width = 2,
+                    Width = 20,
                     StrokeColor = Color.FromHex("#232323")
                 };
                 primaryNumericalAxis.StripLines.Add(stripLine);
@@ -237,8 +238,7 @@ namespace SenseWeather
                 // this key (timestasmp) does not yet exist 
                 WeatherDictionary.Add(key, new WeatherModel() { RelativeTimeStamp = key });
             }
-            // this key exists.
-
+            // this key exists...does it have all 3 data points?
             if (EntryIsComplete(key))
             {
                 UpdateChart(key);
@@ -430,6 +430,7 @@ namespace SenseWeather
         {
             await AskForData();
             //TODO: set back to false
+            WeatherViewModel.Data = new System.Collections.ObjectModel.ObservableCollection<WeatherModel>();
             await AskForHistory(true);
         }
 

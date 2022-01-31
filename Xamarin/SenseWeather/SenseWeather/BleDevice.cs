@@ -22,7 +22,7 @@ namespace SenseWeather
         private static void _bluetoothAdapter_DeviceConnectionLost(object sender, Plugin.BLE.Abstractions.EventArgs.DeviceErrorEventArgs e)
         {
             //TODO: reconnect
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         public static bool IsBluetoothEnabled()

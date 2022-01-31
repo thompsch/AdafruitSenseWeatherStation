@@ -121,15 +121,15 @@
             <!-- ************* Pressure ********************** -->
             <gauge:SfCircularGauge Margin="3,-20,10,0" Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" >
                 <gauge:SfCircularGauge.Scales>
-                    <gauge:Scale x:Name="pressureScalemmHg" StartValue="650" EndValue="820"
+                    <gauge:Scale x:Name="pressureScalemmHg" StartValue="720" EndValue="800"
                                  UseRangeColorForLabels="False" LabelFontSize="12"
                                  FontAttributes="Bold"
                                  LabelOffset="0.85" ScaleStartOffset="0.65" ScaleEndOffset="0.68"
                                  LabelColor="#443585"
-                                 Interval="20"
+                                 Interval="10"
                                  >
                         <gauge:Scale.Ranges>
-                            <gauge:Range x:Name="pressureRangehPa" StartValue="650" EndValue="820" Color="Transparent" />
+                            <gauge:Range x:Name="pressureRangehPa" StartValue="720" EndValue="800" Color="Transparent" />
                         </gauge:Scale.Ranges>
                         <gauge:Scale.Pointers>
                             <gauge:NeedlePointer x:Name="pressureNeedle" Color="#FF9370DB"
@@ -143,7 +143,7 @@
                             <gauge:TickSettings Thickness="0" Length="0" Color="Transparent" />
                         </gauge:Scale.MinorTickSettings>
                     </gauge:Scale>
-                    <gauge:Scale x:Name="mBar" StartValue="866" EndValue="1086"
+                    <gauge:Scale x:Name="mBar" StartValue="960" EndValue="1067"
                                  LabelFontSize="9" 
                                  LabelColor="#000000"
                                  LabelOffset=".5" RimColor="#FF9370DB" 
@@ -268,7 +268,7 @@
                         </graph:NumericalAxis>
                     </graph:SfChart.PrimaryAxis>
                     <graph:SfChart.SecondaryAxis>
-                        <graph:NumericalAxis Minimum="0"
+                        <graph:NumericalAxis x:Name="historyYAxis" Minimum="0"
                                              Maximum="100"
                                              ShowMajorGridLines="False">
                             <graph:NumericalAxis.AxisLineStyle>
