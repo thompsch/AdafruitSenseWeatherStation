@@ -162,7 +162,6 @@
                         </gauge:Scale.MinorTickSettings>
                     </gauge:Scale>
                 </gauge:SfCircularGauge.Scales>
-
             </gauge:SfCircularGauge>
             <Grid BackgroundColor="#d3dece"
                   VerticalOptions="End"
@@ -192,6 +191,7 @@
                    TextColor="Black"/>
 
             </Grid>
+            <!-- ROW 4 -->
             <!-- ************ refresh button ***************-->
             <Button x:Name="btnRefresh" Text="Refresh" Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
                    Clicked="RefreshButton_Clicked" BackgroundColor="#a3bcc4"
@@ -288,12 +288,13 @@
                     </graph:SfChart.ColorModel>
                     <graph:SfChart.Series>
                         <graph:SplineSeries
-                            x:Name="splineSeries1"
+                            x:Name="tempSplineSeries"
                             ItemsSource="{Binding Source={x:Static local:WeatherViewModel.Data}, Mode=OneWay}"
                             XBindingPath="RelativeTimeStamp"
-                            YBindingPath="TempValue"
+                            YBindingPath="NormalizedTempValue"
                             StrokeWidth="2"
                             Color="#dd0000"
+                            Opacity="0.5"
                             EnableTooltip="false"
                             SplineType="Monotonic">
 
@@ -305,7 +306,8 @@
                                             HeightRequest="3" 
                                             CornerRadius="3" 
                                             WidthRequest="3" 
-                                            BorderColor="#dd0000" />
+                                            BorderColor="#dd0000"
+                                            Opacity="0.5"/>
                                         </DataTemplate>
                                     </graph:ChartDataMarker.LabelTemplate>
                                     <graph:ChartDataMarker.LabelStyle>
@@ -316,11 +318,12 @@
                         </graph:SplineSeries>
 
                         <graph:SplineSeries
-                            x:Name="splineSeries2"
+                            x:Name="humiditySplineSeries"
                             ItemsSource="{Binding Source={x:Static local:WeatherViewModel.Data},Mode=OneWay}"
                             XBindingPath="RelativeTimeStamp"
-                            YBindingPath="HumidityValue"
-                            Color="#8bc95f"
+                            YBindingPath="NormalizedHumidityValue"
+                            Color="#69a73d"
+                            Opacity="0.5"
                             StrokeWidth="2"
                             EnableTooltip="false"
                             SplineType="Monotonic">
@@ -332,7 +335,8 @@
                                             HeightRequest="3" 
                                             CornerRadius="0" 
                                             WidthRequest="3"
-                                            BorderColor="#8bc95f"
+                                            BorderColor="#69a73d"
+                                                Opacity="0.5"
                                             BorderWidth="5" />
                                         </DataTemplate>
                                     </graph:ChartDataMarker.LabelTemplate>
@@ -343,12 +347,13 @@
                             </graph:SplineSeries.DataMarker>
                         </graph:SplineSeries>
                         <graph:SplineSeries
-                            x:Name="splineSeries3"
+                            x:Name="pressureSplineSeries"
                             ItemsSource="{Binding Source={x:Static local:WeatherViewModel.Data}, Mode=OneWay}"
                             XBindingPath="RelativeTimeStamp"
-                            YBindingPath="PressureValue"
+                            YBindingPath="NormalizedPressureValue"
                             StrokeWidth="2"
-                            Color="#FF9370DB"
+                            Color="#9370DB"
+                            Opacity="0.5"
                             EnableTooltip="false"
                             SplineType="Monotonic">
                             <graph:SplineSeries.DataMarker>
@@ -359,7 +364,8 @@
                                            HeightRequest="3" 
                                             CornerRadius="0" 
                                             WidthRequest="3"
-                                            BorderColor="#FF9370DB" 
+                                            BorderColor="#FF9370DB"
+                                                Opacity="0.5"
                                             BorderWidth="5" />
                                         </DataTemplate>
                                     </graph:ChartDataMarker.LabelTemplate>
@@ -374,45 +380,62 @@
             </Frame>
             <!-- ************* chart legend ******************* -->
             <StackLayout Orientation="Horizontal"
-                         Grid.Row="3"
+                         Grid.Row="4"
                          Grid.Column="0"
                          Grid.ColumnSpan="4"
                          HorizontalOptions="Start"
-                         VerticalOptions="End"
-                         HeightRequest="16"
-                         Margin="17,0,0,28"
+                         VerticalOptions="Start"
+                         HeightRequest="24"
+                         Margin="10,-14,0,0"
                          >
                 <Frame BackgroundColor="#dd0000" BorderColor="Black"
-                       CornerRadius="60" >
+                       CornerRadius="80"
+                       Padding="20"
+                       WidthRequest="-10"
+                       
+                       >
                     <Label TextColor="White"
                         Text="T"
-                        FontSize="12"
+                        FontSize="24"
                            FontAttributes="Bold"
-                           Margin="-15,-24,-15,0"
+                           Margin="-11,-22,-15,0"
                            VerticalTextAlignment="Center"
+                           
                         />
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="TempTapGestureRecognizer_Tapped" />
+                    </Frame.GestureRecognizers>
                 </Frame>
                 <Frame BackgroundColor="#FF9370DB" BorderColor="Black"
-                       CornerRadius="60"
-                       Margin="-5,0,0,0">
+                       CornerRadius="80"
+                       Margin="-5,0,0,0"
+                       WidthRequest="-10">
                     <Label TextColor="White"
                         Text="P"
-                        FontSize="12"
+                        FontSize="24"
                            FontAttributes="Bold"
-                           Margin="-15,-24,-15,0"
+                           Margin="-11,-22,-15,0"
                            VerticalTextAlignment="Center"
                         />
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="PressureTapGestureRecognizer_Tapped" />
+                    </Frame.GestureRecognizers>
                 </Frame>
-                <Frame BackgroundColor="#8bc95f" BorderColor="Black"
-                       CornerRadius="60"
-                       Margin="-5,0,0,0">
+                <Frame BackgroundColor="#69a73d" BorderColor="Black"
+                       CornerRadius="80"
+                       Margin="-5,0,0,0"
+                       WidthRequest="-10">
                     <Label TextColor="White"
                         Text="H"
-                        FontSize="12"
+                        FontSize="24"
                         FontAttributes="Bold"
-                        Margin="-15,-24,-15,0"
+                        Margin="-13,-22,-15,0"
                         VerticalTextAlignment="Center"
+                           Padding="0"
                         />
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="HumidityTapGestureRecognizer_Tapped" />
+                    </Frame.GestureRecognizers>
                 </Frame>
             </StackLayout>
         </Grid>

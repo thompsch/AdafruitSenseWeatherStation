@@ -22,15 +22,15 @@ uint16_t r, g, b, c;
 float temperature, pressure, altitude;
 float humidity;
 float sensors[] = {temperature, pressure, humidity, (float)c};
+unsigned long brightMillis = -1;
 unsigned long lastMillis = -1;
 unsigned long tMillis = -1;
-unsigned long pMillis = -1;
-unsigned long hMillis = -1;
+uint8_t brightness = 2;
 
 /* HISTORY */
 int logCount;
 int logPointer;
-#define maxLogCount 144 // every 1/2hour for 3 full days = 144
+#define maxLogCount 72 // every hour for 3 full days = 72
 String weatherLog[maxLogCount];
 
 
@@ -40,7 +40,7 @@ void setup() {
   Serial.println("7 Segment Backpack Test");
 #endif
   matrix.begin(0x70);
-  matrix.setBrightness(3);  // BRIGHTNESS 0 -15
+  matrix.setBrightness(brightness);  // BRIGHTNESS 0 -15
 
   matrix.writeDigitRaw(0, 64);
   matrix.writeDigitRaw(1, 118);
@@ -51,9 +51,6 @@ void setup() {
   sht30.begin();
   Bluefruit.autoConnLed(true);
   Serial.begin(115200);
-
-  Serial.println("Bluefruit52 BLEUART Example");
-  Serial.println("---------------------------\n");
 
   Bluefruit.autoConnLed(true);
   Bluefruit.configPrphBandwidth(BANDWIDTH_MAX);
@@ -74,8 +71,6 @@ void setup() {
   // Set up and start advertising
   startAdv();
   getLatestData();
-  
-
 }
 
 void startAdv(void)
@@ -90,16 +85,32 @@ void startAdv(void)
   Bluefruit.Advertising.start(0);             // 0 = Don't stop advertising after n seconds
 }
 
-
 void loop() {
+  if (millis() - lastMillis >= 60*60*1000) //collect history every 60 minutes
+  {
+    lastMillis = millis();
+    getLatestData();
+    WriteHistoryToBuffer();
+  }
 
-  // print a hex number
-  //matrix.print(0xCAEB, HEX);
-  //matrix.writeDisplay();
   while (bleuart.available())
   {
     uint8_t ch;
     ch = (uint8_t)bleuart.read();
+    if (ch == 76 || ch == 108) // l or L
+    {
+      Serial.print("bright: ");
+      Serial.println(brightness);
+      if (brightness  == 2) {
+        brightness = 10;
+        matrix.setBrightness(brightness);
+        brightMillis = millis();
+      }
+      else {
+        brightness = 2;
+        matrix.setBrightness(brightness);
+      } 
+    }
     if (ch == 84 || ch == 116)
     { //"t" or "T"
       sendTemperature();
@@ -109,27 +120,71 @@ void loop() {
       getLatestData();
       sendPressure();
     }
-    // ************************ SEND HUMIDITY **********************************
     else if (ch == 72 || ch == 104)
     { //"h" or "H"
       getLatestData();
       sendHumidity();
     }
+    else if (ch == 66 || ch == 98)
+    { //"b" or "B"
+      sendBattery();
+    }
+    if (ch == 65 || ch == 97) //"a" or "A"
+    {
+      getLatestData();
+      sendTemperature();
+      sendPressure();
+      sendHumidity();
+      sendBattery();
+    }
+    if (ch == 88 || ch == 120) //"x" or "X"
+    {
+      for (int x = logPointer; x < maxLogCount + logPointer; x++)
+      {
+        String strs[3];
+        int StringCount = 0;
+        String str = weatherLog[x % maxLogCount];
 
+        while (str.length() > 0)
+        {
+          int index = str.indexOf('X');
+          if (index == -1) // No X found (probably the last substring)
+          {
+            strs[StringCount++] = "X" + str;
+            break;
+          }
+          else
+          {
+            strs[StringCount++] = "X" + str.substring(0, index);
+            str = str.substring(index + 1);
+          }
+        }
+        for (int i = 0; i < StringCount; i++)
+        {
+          bleuart.print(strs[i]);
+          Serial.print(strs[i]);
+        }
+      }
+    }
   }
-
+  if (millis() - tMillis >= 13*1000) 
+  {
   HandleDisplay();
+  }
+  if (millis() - brightMillis >= 10*1000 && brightness == 10) {
+        brightMillis = millis();
+        brightness = 2;
+        matrix.setBrightness(brightness);
+  }
 }
 void getLatestData()
 {
-  Serial.println("Getting latest sensor data");
   temperature = bmp280.readTemperature();
   pressure = bmp280.readPressure();
   humidity = sht30.readHumidity();
 }
 
 void sendTemperature() {
-  temperature = bmp280.readTemperature();
   char tBuf[9];
   dtostrf(temperature, 4, 2, tBuf);
   char charBuf[15];
@@ -158,36 +213,40 @@ void sendHumidity(){
   Serial.println(charBuf);
 }
 
+void sendBattery(){
+  float measuredvbat = analogRead(VBATPIN);
+  measuredvbat *= 2;
+  measuredvbat *= 3.6;  // Multiply by 3.6V, our reference voltage
+  measuredvbat /= 1024; // convert to voltage
+  char bBuf[9];
+  dtostrf(measuredvbat, 4, 2, bBuf);
+  char charBuf[6];
+  strcpy(charBuf, "B");
+  strcpy(charBuf + 1, bBuf);
+  bleuart.write(charBuf);
+  Serial.println(charBuf);
+}
+
 void HandleDisplay(){
-  
-  if (millis() - tMillis >= 8*1000) 
-  {
-    tMillis = millis();
-    pMillis = tMillis + 4000;
-    hMillis = pMillis + 6000;
-    /*Serial.print(tMillis);
-    Serial.print(" - ");
-    Serial.print(pMillis);
-    Serial.print(" - ");
-    Serial.println(hMillis);
-    Serial.print(" :: ");*/
-    Serial.println(millis());
-    
-    bmp280.readTemperature();
-    float fTemp = (temperature*9/5)+32;
-    matrix.print(fTemp,2);
-    matrix.writeDigitRaw(4, 113);
-    matrix.writeDisplay(); 
-  }
-  if (millis() >= pMillis){
-    matrix.print(pressure/1000,1);
-    matrix.writeDisplay();
-  }
-  if (millis() >= hMillis) {
-    matrix.print((int)humidity);
-    matrix.writeDigitRaw(0, 116);
-    matrix.writeDisplay();
-  }
+  getLatestData();
+  tMillis = millis();
+  float fTemp = (temperature*9/5)+32;
+  matrix.print(fTemp,2);
+  matrix.writeDigitRaw(4, 0);
+  matrix.writeDisplay(); 
+  delay(3000);
+  matrix.clear();
+}
+
+void WriteHistoryToBuffer()
+{
+  unsigned long mil = millis();
+  String bloop = String(mil) + "+T" + String(temperature);
+  bloop += "X" + String(mil) + "+H" + String(humidity);
+  bloop += "X" + String(mil) + "+P" + String(pressure);
+  weatherLog[logCount % maxLogCount] = bloop;
+  logCount++;
+  logPointer = logCount % maxLogCount;
 }
 
 char *dtostrf (double val, signed char width, unsigned char prec, char *sout) {

@@ -11,21 +11,25 @@ namespace SenseWeather.Models
         public double TempValue { get; set; }
         public double HumidityValue { get; set; }
         public double PressureValue { get; set; }
-        public double RelativeTimeStamp { get; set; }
+        public double NormalizedTempValue { get; set; }
+        public double NormalizedHumidityValue { get; set; }
+        public double NormalizedPressureValue { get; set; }
+        public long RelativeTimeStamp { get; set; }
 
 
         public WeatherModel()
         {
         }
+
         public override bool Equals(object obj)
         {
             try
             {
-                var wd = (WeatherModel)obj;
-                return (this.RelativeTimeStamp == wd.RelativeTimeStamp &&
-                    this.TempValue == wd.TempValue &&
-                    this.PressureValue == wd.PressureValue &&
-                    this.HumidityValue == wd.HumidityValue);
+                var wm = (WeatherModel)obj;
+                return (this.RelativeTimeStamp == wm.RelativeTimeStamp &&
+                    this.TempValue == wm.TempValue &&
+                    this.PressureValue == wm.PressureValue &&
+                    this.HumidityValue == wm.HumidityValue);
             }
             catch
             {
@@ -38,23 +42,34 @@ namespace SenseWeather.Models
     {
 
         public static event PropertyChangedEventHandler StaticPropertyChanged;
-        public static ObservableCollection<WeatherModel> Data { get; set; }
-        private static double currentRangMaxTemp;
-        private static double currentRangMinTemp;
-        private static double currentRangMaxPressure;
-        private static double currentRangMinPressure;
+        public static LimitedSizeObservableCollection<WeatherModel> Data
+        {
+            get
+            {
+                return data;
+            }
+        }
+        private static LimitedSizeObservableCollection<WeatherModel> data { get; set; }
+        private static double currentRangeMaxTemp;
+        private static double currentRangeMinTemp;
+        private static double currentRangeMaxPressure;
+        private static double currentRangeMinPressure;
 
         static WeatherViewModel()
         {
-            Data = new ObservableCollection<WeatherModel>();
+            data = new LimitedSizeObservableCollection<WeatherModel>(72);
         }
 
         public static void AddToData(WeatherModel input)
         {
             var normalizedData = NormalizeToPercent(input);
-            if (!Data.Contains<WeatherModel>(normalizedData))
+            if (!data.Contains(normalizedData))
             {
-                Data.Add(normalizedData);
+                var index =
+                    data.IndexOf(data.Where(x => x.RelativeTimeStamp < input.RelativeTimeStamp).LastOrDefault());
+                index = index < 0 ? 0 : index + 1;
+                data.Insert(index, normalizedData); //.Add(normalizedData);//
+
             }
         }
 
@@ -72,33 +87,35 @@ namespace SenseWeather.Models
             // Do we want to adjust the scale in these cases, or will we be
             // seeking shelter and not caring about it?
 
-            int minPressureValue = 104000;
-            int maxPressureValue = 96500;
+            int maxPressureValue = 104000;
+            int minPressureValue = 96500;
 
             int minTempValue = -20;
             int maxTempValue = 120;
 
             if (Data != null && Data.Count > 0)
             {
-                currentRangMaxTemp = Math.Max(Data.Max(t => t.TempValue) + 5, input.TempValue);
-                currentRangMinTemp = Math.Min(Data.Min(t => t.TempValue) - 5, input.TempValue);
-                currentRangMaxPressure = Math.Max(Data.Max(t => t.PressureValue) + 5, input.PressureValue);
-                currentRangMinPressure = Math.Min(Data.Min(t => t.PressureValue) - 5, input.PressureValue);
+                currentRangeMaxTemp = Math.Max(Data.Max(t => t.TempValue) + 5, input.TempValue);
+                currentRangeMinTemp = Math.Min(Data.Min(t => t.TempValue) - 5, input.TempValue);
+                currentRangeMaxPressure = Math.Max(Data.Max(t => t.PressureValue) + 5, input.PressureValue);
+                currentRangeMinPressure = Math.Min(Data.Min(t => t.PressureValue) - 5, input.PressureValue);
             }
             else
             {
-                currentRangMaxTemp = maxTempValue;
-                currentRangMinTemp = minTempValue;
-                currentRangMinPressure = minPressureValue;
-                currentRangMaxPressure = maxPressureValue;
+                currentRangeMaxTemp = maxTempValue;
+                currentRangeMinTemp = minTempValue;
+                currentRangeMinPressure = minPressureValue;
+                currentRangeMaxPressure = maxPressureValue;
             }
 
             return new WeatherModel()
             {
-                TempValue = (input.TempValue - currentRangMinTemp) / (currentRangMaxTemp - currentRangMinTemp) * 100,
-                // full scale: (input.TempValue - minTempValue) / (maxTempValue - minTempValue) * 100,
-                PressureValue = (input.PressureValue - currentRangMinPressure) / (currentRangMaxPressure - currentRangMinPressure) * 100,
-                HumidityValue = input.HumidityValue, //already a % value
+                TempValue = input.TempValue,
+                PressureValue = input.PressureValue,
+                HumidityValue = input.HumidityValue,
+                NormalizedTempValue = (input.TempValue - currentRangeMinTemp) / (currentRangeMaxTemp - currentRangeMinTemp) * 100,
+                NormalizedPressureValue = (input.PressureValue - currentRangeMinPressure) / (currentRangeMaxPressure - currentRangeMinPressure) * 100,
+                NormalizedHumidityValue = input.HumidityValue, //already a % value
                 RelativeTimeStamp = input.RelativeTimeStamp
             };
         }

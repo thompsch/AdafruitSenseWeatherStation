@@ -1,17 +1,9 @@
 #include <bluefruit.h>
-#include <Adafruit_LittleFS.h>
-#include <InternalFileSystem.h>
-#include <Adafruit_APDS9960.h>
 #include <Adafruit_BMP280.h>
-#include <Adafruit_LIS3MDL.h>
-#include <Adafruit_LSM6DS33.h>
 #include <Adafruit_SHT31.h>
-#include <Adafruit_Sensor.h>
-#include <PDM.h>
-#include <stdlib.h>
-#include <SPI.h>
-#include <SdFat.h>
-#include <Adafruit_SPIFlash.h>
+//#include <Adafruit_Sensor.h>
+
+
 
 // BLE Service
 BLEDfu bledfu;   // OTA DFU service
@@ -19,21 +11,21 @@ BLEDis bledis;   // device information
 BLEUart bleuart; // uart over ble
 BLEBas blebas;   // battery
 
-Adafruit_APDS9960 apds9960; // proximity, light, color, gesture
+//Adafruit_APDS9960 apds9960; // proximity, light, color, gesture
 Adafruit_BMP280 bmp280;     // temperautre, barometric pressure
-Adafruit_LIS3MDL lis3mdl;   // magnetometer
-Adafruit_LSM6DS33 lsm6ds33; // accelerometer, gyroscope
+//Adafruit_LIS3MDL lis3mdl;   // magnetometer
+//Adafruit_LSM6DS33 lsm6ds33; // accelerometer, gyroscope
 Adafruit_SHT31 sht30;       // humidity
 #define VBATPIN A6          //battery pin == A6
 
 uint8_t proximity;
 uint16_t r, g, b, c;
 float temperature, pressure, altitude;
-float magnetic_x, magnetic_y, magnetic_z;
-float accel_x, accel_y, accel_z;
-float gyro_x, gyro_y, gyro_z;
+//float magnetic_x, magnetic_y, magnetic_z;
+//float accel_x, accel_y, accel_z;
+//float gyro_x, gyro_y, gyro_z;
 float humidity;
-int32_t mic;
+//int32_t mic;
 
 float sensors[] = {temperature, pressure, humidity, (float)c};
 unsigned long lastMillis = -1;
@@ -41,19 +33,19 @@ unsigned long lastMillis = -1;
 /* HISTORY */
 int logCount;
 int logPointer;
-#define maxLogCount 72 // every hour for 3 full days = 72
+#define maxLogCount 144 // every 1/2hour for 3 full days = 144
 String weatherLog[maxLogCount];
 
 // *** START SETUP***********************************************************
 void setup()
 {
   // initialize the sensors
-  apds9960.begin();
-  apds9960.enableProximity(true);
-  apds9960.enableColor(true);
+  //apds9960.begin();
+  //apds9960.enableProximity(true);
+  //apds9960.enableColor(true);
   bmp280.begin();
-  lis3mdl.begin_I2C();
-  lsm6ds33.begin_I2C();
+  //lis3mdl.begin_I2C();
+  //lsm6ds33.begin_I2C();
   sht30.begin();
   Serial.begin(115200);
 
@@ -129,12 +121,17 @@ void startAdv(void)
 // *** START LOOP ***********************************************************
 void loop()
 {
-  if (millis() - lastMillis >= 60 * 60 * 1000)
+  if (millis() - lastMillis >= 30*60*1000) //collect history every 30 minutes
   {
     lastMillis = millis();
     getLatestData();
     WriteToBuffer();
+    //Serial.print(freeMemory());
+    //Serial.print("--");
+    //Serial.println(String(logCount));
   }
+
+
 
   while (bleuart.available())
   {
@@ -203,7 +200,7 @@ void loop()
       sendBattery();
     }
     // ************************ GET LUX **********************************
-    else if (ch == 76 || ch == 108) //"l" or "L"
+   /* else if (ch == 76 || ch == 108) //"l" or "L"
     {
       apds9960.getColorData(&r, &g, &b, &c);
       char lBuf[9];
@@ -213,12 +210,14 @@ void loop()
       strcpy(charBuf + 1, lBuf);
       bleuart.write(charBuf);
       Serial.println(charBuf);
-    }
+    }*/
     else
     {
       Serial.write(ch);
     }
   }
+
+
 }
 // *** END LOOP ***********************************************************
 
@@ -283,11 +282,11 @@ void getLatestData()
   pressure = bmp280.readPressure();
   humidity = sht30.readHumidity();
 
-  while (!apds9960.colorDataReady())
+  /*while (!apds9960.colorDataReady())
   {
     delay(5);
   }
-  apds9960.getColorData(&r, &g, &b, &c);
+  apds9960.getColorData(&r, &g, &b, &c);*/
 }
 
 // callback invoked when central connects
@@ -315,7 +314,7 @@ void disconnect_callback(uint16_t conn_handle, uint8_t reason)
 
   Serial.println();
   Serial.print("Disconnected, reason = 0x");
-  Serial.println(reason, HEX);
+  Serial.println(reason);
 }
 
 char *dtostrf(double val, signed char width, unsigned char prec, char *sout)
@@ -324,4 +323,22 @@ char *dtostrf(double val, signed char width, unsigned char prec, char *sout)
   sprintf(fmt, "%%%d.%df", width, prec);
   sprintf(sout, fmt, val);
   return sout;
+}
+
+#ifdef __arm__
+// should use uinstd.h to define sbrk but Due causes a conflict
+extern "C" char* sbrk(int incr);
+#else  // __ARM__
+extern char *__brkval;
+#endif  // __arm__
+
+int freeMemory() {
+  char top;
+#ifdef __arm__
+  return &top - reinterpret_cast<char*>(sbrk(0));
+#elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
+  return &top - __brkval;
+#else  // __arm__
+  return __brkval ? &top - __brkval : &top - __malloc_heap_start;
+#endif  // __arm__
 }

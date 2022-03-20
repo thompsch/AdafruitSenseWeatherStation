@@ -12,7 +12,8 @@ namespace SenseWeather
         private static IAdapter _bluetoothAdapter;
         public static IDevice WeatherStationDevice;
         private static Guid weatherStationGuid = Guid.Parse("00000000-0000-0000-0000-de02576ef3b7");
-        internal static ConnectParameters _connectParameters = new ConnectParameters(autoConnect: true, forceBleTransport: true);
+        internal static ConnectParameters _connectParameters =
+            new ConnectParameters(autoConnect: true, forceBleTransport: true);
 
         static BleDevice()
         {
@@ -49,35 +50,32 @@ namespace SenseWeather
                 _bluetoothAdapter = CrossBluetoothLE.Current.Adapter;
             }
 
-            if (_bluetoothAdapter != null && WeatherStationDevice != null)
-            {
-                return "We already have a weatherstation.";
-            }
+
             /*if (!await CheckPermissions())
             {
                 return null;
             }*/
             try
             {
-                var device = await _bluetoothAdapter.ConnectToKnownDeviceAsync(weatherStationGuid, _connectParameters);
-                if (device != null && device.State == DeviceState.Connected)
+                WeatherStationDevice = await _bluetoothAdapter.ConnectToKnownDeviceAsync(weatherStationGuid);//, _connectParameters);
+                if (WeatherStationDevice != null && WeatherStationDevice.State == DeviceState.Connected)
                 {
-                    WeatherStationDevice = device;
+                    // WeatherStationDevice = device;
                     return "success";
                 }
                 else //device is null
                 {
                     try
                     {
-                        await _bluetoothAdapter.ConnectToKnownDeviceAsync(weatherStationGuid, _connectParameters);
-                        if (device.State != DeviceState.Connected)
+                        WeatherStationDevice = await _bluetoothAdapter.ConnectToKnownDeviceAsync(weatherStationGuid);//, _connectParameters);
+                        if (WeatherStationDevice.State != DeviceState.Connected)
                         {
                             //TODO error!!
                             return "ERROR: Device is no longer connected!";
                         }
                         else
                         {
-                            WeatherStationDevice = device;
+                            //WeatherStationDevice = device;
                             return "reconnect worked!";
                         }
                     }
@@ -90,7 +88,7 @@ namespace SenseWeather
             }
             catch (Exception ex)
             {
-                return ex.ToString();
+                return $"ERROR: {ex}";
             }
         }
 
